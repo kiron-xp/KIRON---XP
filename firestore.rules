@@ -1,0 +1,176 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidAccount(data, accountId) {
+      return data.keys().hasAll([
+          'id', 'issuer', 'accountName', 'secret', 'type',
+          'algorithm', 'digits', 'period', 'counter', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'issuer', 'accountName', 'category', 'caption', 'secret',
+          'type', 'algorithm', 'digits', 'period', 'counter', 'avatarDataUrl', 'createdAt'
+        ])
+        && data.id == accountId
+        && data.issuer is string && data.issuer.size() >= 1 && data.issuer.size() <= 120
+        && data.accountName is string && data.accountName.size() >= 1 && data.accountName.size() <= 200
+        && isValidOptionalString(data, 'category', 60)
+        && isValidOptionalString(data, 'caption', 300)
+        && data.secret is string && data.secret.size() >= 8 && data.secret.size() <= 256
+        && data.type in ['totp', 'hotp']
+        && data.algorithm in ['SHA-1', 'SHA-256', 'SHA-512']
+        && (data.digits == 6 || data.digits == 8)
+        && (data.period == 15 || data.period == 30 || data.period == 60 || data.period == 90)
+        && data.counter is number && data.counter >= 0 && data.counter <= 1000000000
+        && isValidOptionalString(data, 'avatarDataUrl', 200000)
+        && data.createdAt is number && data.createdAt > 0;
+    }
+
+    function isValidEmail(data, emailId) {
+      return data.keys().hasAll(['id', 'email', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'email', 'label', 'password', 'note', 'avatarDataUrl', 'createdAt', 'updatedAt'
+        ])
+        && data.id == emailId
+        && data.email is string && data.email.size() >= 1 && data.email.size() <= 200
+        && isValidOptionalString(data, 'label', 120)
+        && isValidOptionalString(data, 'password', 200)
+        && isValidOptionalString(data, 'note', 500)
+        && isValidOptionalString(data, 'avatarDataUrl', 200000)
+        && data.createdAt is number && data.createdAt > 0
+        && data.updatedAt is number && data.updatedAt >= data.createdAt;
+    }
+
+    function isValidNote(data, noteId) {
+      return data.keys().hasAll(['id', 'title', 'content', 'color', 'pinned', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'title', 'content', 'color', 'pinned', 'createdAt', 'updatedAt'])
+        && data.id == noteId
+        && data.title is string && data.title.size() <= 200
+        && data.content is string && data.content.size() <= 20000
+        && data.color in ['default', 'emerald', 'amber', 'sky', 'rose', 'violet']
+        && data.pinned is bool
+        && data.createdAt is number && data.createdAt > 0
+        && data.updatedAt is number && data.updatedAt >= data.createdAt;
+    }
+
+    function isValidSheet(data, sheetId) {
+      return data.keys().hasAll(['id', 'title', 'rowCount', 'colCount', 'rowsMap', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'title', 'rowCount', 'colCount', 'rowsMap', 'createdAt', 'updatedAt'])
+        && data.id == sheetId
+        && data.title is string && data.title.size() <= 200
+        && data.rowCount is number && data.rowCount >= 1 && data.rowCount <= 500
+        && data.colCount is number && data.colCount >= 1 && data.colCount <= 50
+        && data.rowsMap is map && data.rowsMap.size() <= 500
+        && data.createdAt is number && data.createdAt > 0
+        && data.updatedAt is number && data.updatedAt >= data.createdAt;
+    }
+
+    function isValidRecoveryCode(data, codeId) {
+      return data.keys().hasAll(['id', 'code', 'used'])
+        && data.keys().hasOnly(['id', 'code', 'used', 'usedAt'])
+        && data.id == codeId
+        && data.code is string && data.code.size() >= 4 && data.code.size() <= 64
+        && data.used is bool
+        && (!('usedAt' in data) || (data.usedAt is number && data.usedAt > 0));
+    }
+
+    // Connection validation probe doc
+    match /test/{docId} {
+      allow get: if isValidId(docId);
+    }
+
+    // Shared 2FA Accounts
+    match /accounts/{accountId} {
+      allow get: if isValidId(accountId);
+      allow list: if resource.data.createdAt > 0;
+      allow create: if isValidId(accountId) && isValidAccount(incoming(), accountId);
+      allow update: if isValidId(accountId)
+        && isValidAccount(incoming(), accountId)
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'issuer', 'accountName', 'category', 'caption', 'secret',
+          'type', 'algorithm', 'digits', 'period', 'counter', 'avatarDataUrl'
+        ]);
+      allow delete: if isValidId(accountId);
+    }
+
+    // Shared Saved Emails
+    match /emails/{emailId} {
+      allow get: if isValidId(emailId);
+      allow list: if resource.data.createdAt > 0;
+      allow create: if isValidId(emailId) && isValidEmail(incoming(), emailId);
+      allow update: if isValidId(emailId)
+        && isValidEmail(incoming(), emailId)
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'email', 'label', 'password', 'note', 'avatarDataUrl', 'updatedAt'
+        ]);
+      allow delete: if isValidId(emailId);
+    }
+
+    // Shared Keep Notes
+    match /notes/{noteId} {
+      allow get: if isValidId(noteId);
+      allow list: if resource.data.updatedAt > 0;
+      allow create: if isValidId(noteId) && isValidNote(incoming(), noteId);
+      allow update: if isValidId(noteId)
+        && isValidNote(incoming(), noteId)
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'content', 'color', 'pinned', 'updatedAt'
+        ]);
+      allow delete: if isValidId(noteId);
+    }
+
+    // Shared 100-Row Sheets
+    match /sheets/{sheetId} {
+      allow get: if isValidId(sheetId);
+      allow list: if resource.data.updatedAt > 0;
+      allow create: if isValidId(sheetId) && isValidSheet(incoming(), sheetId);
+      allow update: if isValidId(sheetId)
+        && isValidSheet(incoming(), sheetId)
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'rowCount', 'colCount', 'rowsMap', 'updatedAt'
+        ]);
+      allow delete: if isValidId(sheetId);
+    }
+
+    // Shared Recovery Codes
+    match /recoveryCodes/{codeId} {
+      allow get: if isValidId(codeId);
+      allow list: if resource.data.code >= '';
+      allow create: if isValidId(codeId) && isValidRecoveryCode(incoming(), codeId);
+      allow update: if isValidId(codeId)
+        && isValidRecoveryCode(incoming(), codeId)
+        && incoming().id == existing().id
+        && incoming().diff(existing()).affectedKeys().hasOnly(['used', 'usedAt']);
+      allow delete: if isValidId(codeId);
+    }
+  }
+}

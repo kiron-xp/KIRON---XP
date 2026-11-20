@@ -1,0 +1,232 @@
+{
+  "entities": {
+    "AccountEntry": {
+      "title": "AccountEntry",
+      "description": "A 2FA TOTP or HOTP authenticator entry stored in the shared KIRON - XP vault.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "issuer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "accountName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "caption": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "secret": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 256
+        },
+        "type": {
+          "type": "string",
+          "enum": ["totp", "hotp"]
+        },
+        "algorithm": {
+          "type": "string",
+          "enum": ["SHA-1", "SHA-256", "SHA-512"]
+        },
+        "digits": {
+          "type": "number"
+        },
+        "period": {
+          "type": "number"
+        },
+        "counter": {
+          "type": "number"
+        },
+        "avatarDataUrl": {
+          "type": "string",
+          "maxLength": 200000
+        },
+        "createdAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "issuer",
+        "accountName",
+        "secret",
+        "type",
+        "algorithm",
+        "digits",
+        "period",
+        "counter",
+        "createdAt"
+      ]
+    },
+    "EmailEntry": {
+      "title": "EmailEntry",
+      "description": "A saved email credential and note entry in the shared KIRON - XP vault.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "password": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "avatarDataUrl": {
+          "type": "string",
+          "maxLength": 200000
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "email", "createdAt", "updatedAt"]
+    },
+    "NoteEntry": {
+      "title": "NoteEntry",
+      "description": "A Keep-style diary note entry in the shared KIRON - XP vault.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "color": {
+          "type": "string",
+          "enum": ["default", "emerald", "amber", "sky", "rose", "violet"]
+        },
+        "pinned": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "title", "content", "color", "pinned", "createdAt", "updatedAt"]
+    },
+    "SheetEntry": {
+      "title": "SheetEntry",
+      "description": "A spreadsheet table stored using a native Firestore map of non-empty rows.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "rowCount": {
+          "type": "number"
+        },
+        "colCount": {
+          "type": "number"
+        },
+        "rowsMap": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "title", "rowCount", "colCount", "rowsMap", "createdAt", "updatedAt"]
+    },
+    "RecoveryCode": {
+      "title": "RecoveryCode",
+      "description": "A one-time recovery code entry.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64
+        },
+        "used": {
+          "type": "boolean"
+        },
+        "usedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "code", "used"]
+    }
+  },
+  "firestore": {
+    "/accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/AccountEntry" },
+      "description": "Shared 2FA TOTP/HOTP accounts synced live across all unlocked clients."
+    },
+    "/emails/{emailId}": {
+      "schema": { "$ref": "#/entities/EmailEntry" },
+      "description": "Shared saved email entries synced live across all unlocked clients."
+    },
+    "/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/NoteEntry" },
+      "description": "Shared Keep-style diary notes synced live across all unlocked clients."
+    },
+    "/sheets/{sheetId}": {
+      "schema": { "$ref": "#/entities/SheetEntry" },
+      "description": "Shared 100-row spreadsheets synced live across all unlocked clients."
+    },
+    "/recoveryCodes/{codeId}": {
+      "schema": { "$ref": "#/entities/RecoveryCode" },
+      "description": "Shared emergency recovery codes synced across all unlocked clients."
+    }
+  }
+}
