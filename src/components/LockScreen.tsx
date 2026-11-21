@@ -4,6 +4,7 @@ import { Translations } from '../lib/i18n';
 import { Language, ThemeMode } from '../types';
 
 const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
+const GATE_WALLPAPER_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_0000000063188246b2dc4e77b1130652_ad6f1a5e.webp`;
 
 interface LockScreenProps {
   t: Translations;
@@ -50,8 +51,32 @@ export function LockScreen({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+    <div
+      className={`min-h-screen flex flex-col relative overflow-hidden ${
+        isSiteGate
+          ? 'bg-slate-950 text-slate-900 dark:text-slate-100'
+          : 'bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100'
+      }`}
+    >
+      {isSiteGate && (
+        <div className="absolute inset-0 z-0 pointer-events-none select-none">
+          <img
+            src={GATE_WALLPAPER_URL}
+            alt=""
+            aria-hidden="true"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-slate-950/30 dark:bg-slate-950/45" />
+        </div>
+      )}
+
+      <div
+        className={`relative z-10 flex items-center justify-between px-6 py-4 border-b ${
+          isSiteGate
+            ? 'bg-white/80 dark:bg-slate-950/75 backdrop-blur-md border-slate-200/70 dark:border-slate-800/70'
+            : 'border-slate-200 dark:border-slate-800'
+        }`}
+      >
         <div className="flex items-center gap-2.5">
           <img
             src={APP_LOGO_URL}
@@ -67,7 +92,7 @@ export function LockScreen({
           <button
             type="button"
             onClick={onToggleLang}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Globe className="w-3.5 h-3.5" />
             <span>{lang === 'bn' ? 'English' : 'বাংলা'}</span>
@@ -75,7 +100,7 @@ export function LockScreen({
           <button
             type="button"
             onClick={onToggleTheme}
-            className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             aria-label={theme === 'dark' ? t.themeLight : t.themeDark}
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -83,8 +108,14 @@ export function LockScreen({
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8">
+      <div className="relative z-10 flex-1 flex items-center justify-center p-6">
+        <div
+          className={`w-full max-w-md rounded-2xl p-8 ${
+            isSiteGate
+              ? 'bg-white/88 dark:bg-slate-900/85 backdrop-blur-md border border-white/60 dark:border-slate-700/70 shadow-2xl'
+              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'
+          }`}
+        >
           {isSiteGate ? (
             <div className="flex items-center justify-center mb-6">
               <div className="w-28 h-28 rounded-3xl overflow-hidden flex items-center justify-center shadow-md ring-1 ring-slate-200/80 dark:ring-slate-700/80">
