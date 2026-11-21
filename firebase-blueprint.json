@@ -326,6 +326,30 @@
           "type": "string",
           "maxLength": 300
         },
+        "tiktokUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "instagramUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "wechatUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "facebookUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "imoUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "messengerUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
         "showSocialLinks": {
           "type": "boolean"
         },

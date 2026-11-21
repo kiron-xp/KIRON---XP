@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Globe, Lock, Moon, ShieldAlert, Sun } from 'lucide-react';
+import { Check, Copy, Eye, EyeOff, Globe, Lock, Moon, ShieldAlert, Sun, X } from 'lucide-react';
 import { Translations } from '../lib/i18n';
 import { Language, SiteEntryConfig, ThemeMode } from '../types';
+import { resolveSocialAppAction, SOCIAL_APPS, SocialAppLogoSvg } from './SocialAppIcons';
 
 const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
 const GATE_WALLPAPER_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_0000000063188246b2dc4e77b1130652_ad6f1a5e.webp`;
@@ -34,22 +35,6 @@ function getOverlayClass(opacity?: number): string {
   return OVERLAY_CLASS_MAP[closest] ?? 'bg-black/25';
 }
 
-function normalizeTelegramHref(raw?: string): string {
-  const val = raw?.trim() ?? '';
-  if (!val) return 'https://t.me';
-  if (/^https?:\/\//i.test(val)) return val;
-  const cleaned = val.replace(/^@+/, '').replace(/^t\.me\//i, '');
-  return cleaned ? `https://t.me/${cleaned}` : 'https://t.me';
-}
-
-function normalizeWhatsAppHref(raw?: string): string {
-  const val = raw?.trim() ?? '';
-  if (!val) return 'https://wa.me';
-  if (/^https?:\/\//i.test(val)) return val;
-  const digits = val.replace(/[^\d]/g, '');
-  return digits ? `https://wa.me/${digits}` : 'https://wa.me';
-}
-
 interface LockScreenProps {
   t: Translations;
   lang: Language;
@@ -78,6 +63,11 @@ export function LockScreen({
   const [error, setError] = useState('');
   const [unlocking, setUnlocking] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [activeSocialPopup, setActiveSocialPopup] = useState<{
+    label: string;
+    value: string;
+  } | null>(null);
+  const [copiedPopup, setCopiedPopup] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +83,17 @@ export function LockScreen({
       setError(isSiteGate ? t.siteWrongPass : t.wrongPassphrase);
     } finally {
       setUnlocking(false);
+    }
+  };
+
+  const handleCopyPopup = async () => {
+    if (!activeSocialPopup) return;
+    try {
+      await navigator.clipboard.writeText(activeSocialPopup.value);
+      setCopiedPopup(true);
+      window.setTimeout(() => setCopiedPopup(false), 1800);
+    } catch {
+      // ignore clipboard errors
     }
   };
 
@@ -126,8 +127,9 @@ export function LockScreen({
         </div>
       )}
 
+      {/* Top Bar */}
       <div
-        className={`relative z-10 flex items-center justify-between px-5 sm:px-6 py-3.5 shrink-0 ${
+        className={`relative z-10 flex items-center justify-between px-5 sm:px-6 py-3 shrink-0 ${
           isSiteGate
             ? 'bg-transparent border-transparent'
             : 'border-b border-slate-200 dark:border-slate-800'
@@ -137,10 +139,10 @@ export function LockScreen({
           <img
             src={APP_LOGO_URL}
             alt={headerBrand}
-            className="w-9 h-9 rounded-xl object-cover object-center shrink-0 shadow-sm"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-cover object-center shrink-0 shadow-sm"
           />
           <span
-            className={`text-lg font-bold tracking-tight truncate ${
+            className={`text-base sm:text-lg font-bold tracking-tight truncate ${
               isSiteGate ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]' : ''
             }`}
           >
@@ -176,22 +178,23 @@ export function LockScreen({
         </div>
       </div>
 
+      {/* Password Lock Stack (Top area on site gate, centered on vault lock) */}
       <div
-        className={`relative z-10 flex-1 flex justify-center min-h-0 ${
-          isSiteGate ? 'items-start px-5 pt-2 sm:pt-6' : 'items-center p-6'
+        className={`relative z-10 flex justify-center ${
+          isSiteGate ? 'items-start px-5 pt-1 sm:pt-3 shrink-0' : 'flex-1 items-center p-6 min-h-0'
         }`}
       >
         <div
           className={`w-full ${
             isSiteGate
-              ? 'max-w-sm bg-transparent px-4 py-1 text-center'
+              ? 'max-w-sm bg-transparent px-3 py-0.5 text-center'
               : 'max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8'
           }`}
         >
           {isSiteGate ? (
             showCenterLogo && (
-              <div className="flex items-center justify-center mb-3">
-                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-3xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
+              <div className="flex items-center justify-center mb-2.5">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
                   <img
                     src={APP_LOGO_URL}
                     alt={headerBrand}
@@ -208,10 +211,10 @@ export function LockScreen({
 
           {(!isSiteGate || gateTitle.trim().length > 0) && (
             <h1
-              className={`text-xl font-bold tracking-tight ${
+              className={`font-bold tracking-tight ${
                 isSiteGate
-                  ? 'text-white text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]'
-                  : 'text-slate-900 dark:text-slate-100'
+                  ? 'text-lg sm:text-xl text-white text-center drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]'
+                  : 'text-xl text-slate-900 dark:text-slate-100'
               }`}
             >
               {isSiteGate ? gateTitle : t.vaultLockedTitle}
@@ -220,17 +223,17 @@ export function LockScreen({
 
           {(!isSiteGate || gateDesc.trim().length > 0) && (
             <p
-              className={`mt-1 text-xs sm:text-sm leading-relaxed ${
+              className={`mt-1 leading-relaxed ${
                 isSiteGate
-                  ? 'text-white/95 text-center drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'text-[11px] sm:text-xs text-white/95 text-center drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
+                  : 'text-sm text-slate-600 dark:text-slate-400'
               }`}
             >
               {isSiteGate ? gateDesc : t.vaultLockedDesc}
             </p>
           )}
 
-          <form onSubmit={handleSubmit} className={isSiteGate ? 'mt-3 space-y-2.5' : 'mt-6 space-y-4'}>
+          <form onSubmit={handleSubmit} className={isSiteGate ? 'mt-2.5 space-y-2' : 'mt-6 space-y-4'}>
             <div>
               {!isSiteGate && (
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
@@ -249,7 +252,7 @@ export function LockScreen({
                   autoFocus
                   className={
                     isSiteGate
-                      ? 'w-full px-10 py-2.5 text-sm text-center rounded-xl border border-white/45 bg-black/35 backdrop-blur-sm text-white select-text focus:outline-none focus:ring-2 focus:ring-white/45 focus:border-white/80 transition-colors shadow-sm'
+                      ? 'w-full px-10 py-2 text-sm text-center rounded-xl border border-white/45 bg-black/35 backdrop-blur-sm text-white select-text focus:outline-none focus:ring-2 focus:ring-white/45 focus:border-white/80 transition-colors shadow-sm'
                       : 'w-full px-3.5 py-2.5 pr-10 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600'
                   }
                   placeholder={isSiteGate ? '' : '••••••••'}
@@ -271,7 +274,7 @@ export function LockScreen({
 
             {error && (
               <div
-                className={`flex items-center justify-center gap-2 p-2.5 rounded-xl text-xs ${
+                className={`flex items-center justify-center gap-2 p-2 rounded-xl text-xs ${
                   isSiteGate
                     ? 'bg-red-950/75 backdrop-blur-sm border border-red-400/50 text-red-100'
                     : 'bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300'
@@ -287,7 +290,7 @@ export function LockScreen({
               disabled={unlocking || !passphrase}
               className={
                 isSiteGate
-                  ? 'inline-flex items-center justify-center px-5 py-1.5 bg-transparent border-0 shadow-none text-white hover:text-white/80 disabled:opacity-55 text-base font-semibold tracking-wide transition-opacity cursor-pointer drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]'
+                  ? 'inline-flex items-center justify-center px-5 py-1 bg-transparent border-0 shadow-none text-white hover:text-white/80 disabled:opacity-55 text-base font-semibold tracking-wide transition-opacity cursor-pointer drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]'
                   : 'w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors'
               }
             >
@@ -333,45 +336,97 @@ export function LockScreen({
         </div>
       </div>
 
+      {/* Middle 2-Row Mobile App Grid (4x2 centered) */}
       {isSiteGate && (
-        <div className="relative z-10 px-4 sm:px-6 pb-4 pt-1 flex items-end justify-between gap-3 shrink-0">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 min-h-0">
+          {showSocials && (
+            <div className="w-full max-w-[304px] sm:max-w-[348px] grid grid-cols-4 gap-x-3 gap-y-3 sm:gap-x-5 sm:gap-y-4 justify-items-center">
+              {SOCIAL_APPS.map((app) => {
+                const action = resolveSocialAppAction(app.id, siteConfig);
+                const iconEl = (
+                  <>
+                    <span
+                      className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-[0_6px_16px_rgba(0,0,0,0.45)] ring-1 ring-white/30 transition-transform group-hover:scale-105 group-active:scale-95 ${app.badgeClass}`}
+                    >
+                      <SocialAppLogoSvg id={app.id} className="w-6 h-6" />
+                    </span>
+                    <span className="mt-1 text-[10px] sm:text-[11px] font-medium text-white/95 tracking-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] truncate max-w-[68px] text-center">
+                      {app.label}
+                    </span>
+                  </>
+                );
+
+                if (action.type === 'modal') {
+                  return (
+                    <button
+                      key={app.id}
+                      type="button"
+                      onClick={() => {
+                        setCopiedPopup(false);
+                        setActiveSocialPopup({ label: action.label, value: action.value });
+                      }}
+                      aria-label={app.label}
+                      className="group flex flex-col items-center cursor-pointer focus:outline-none"
+                    >
+                      {iconEl}
+                    </button>
+                  );
+                }
+
+                return (
+                  <a
+                    key={app.id}
+                    href={action.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={app.label}
+                    className="group flex flex-col items-center focus:outline-none"
+                  >
+                    {iconEl}
+                  </a>
+                );
+              })}
+            </div>
+          )}
+
+          {activeSocialPopup && (
+            <div className="mt-3 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-black/75 backdrop-blur-md border border-white/25 text-xs text-white shadow-xl max-w-xs">
+              <span className="font-semibold text-white/80 shrink-0">
+                {activeSocialPopup.label}:
+              </span>
+              <span className="font-mono text-white truncate select-text">
+                {activeSocialPopup.value}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyPopup}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/15 hover:bg-white/25 text-[11px] font-medium shrink-0 transition-colors"
+              >
+                {copiedPopup ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedPopup ? (lang === 'bn' ? 'কপি' : 'Copied') : (lang === 'bn' ? 'কপি' : 'Copy')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSocialPopup(null)}
+                aria-label="Close"
+                className="p-0.5 text-white/70 hover:text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Bottom Bio Bar */}
+      {isSiteGate && (
+        <div className="relative z-10 px-4 sm:px-6 pb-4 pt-1 flex justify-center shrink-0">
           {bioText ? (
-            <div className="max-w-[70%] sm:max-w-md px-3.5 py-2 rounded-xl bg-black/45 backdrop-blur-md border border-white/15 text-xs leading-relaxed text-white/95 shadow-lg">
+            <div className="max-w-md px-4 py-2 rounded-xl bg-black/45 backdrop-blur-md border border-white/15 text-xs leading-relaxed text-white/95 text-center shadow-lg">
               <p className="line-clamp-2 break-words whitespace-pre-line">{bioText}</p>
             </div>
           ) : (
-            <div className="min-h-9" />
-          )}
-
-          {showSocials && (
-            <div className="flex items-center gap-2.5 shrink-0">
-              <a
-                href={normalizeTelegramHref(siteConfig?.telegramUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Telegram"
-                className="w-9 h-9 rounded-full bg-[#229ED9] hover:bg-[#1e8ec4] text-white flex items-center justify-center shadow-lg ring-1 ring-white/30 transition-transform hover:scale-105 active:scale-95"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4 fill-current -translate-x-[0.5px]"
-                  aria-hidden="true"
-                >
-                  <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
-                </svg>
-              </a>
-              <a
-                href={normalizeWhatsAppHref(siteConfig?.whatsappUrl)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp"
-                className="w-9 h-9 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white flex items-center justify-center shadow-lg ring-1 ring-white/30 transition-transform hover:scale-105 active:scale-95"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden="true">
-                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.01c-.24.68-1.42 1.3-1.97 1.38-.52.08-1.18.11-1.91-.12-.44-.14-1-.33-1.72-.64-3.03-1.31-5.01-4.38-5.16-4.58-.15-.2-1.23-1.64-1.23-3.13s.78-2.22 1.06-2.52c.28-.3.61-.38.81-.38.2 0 .41.01.58.01.19 0 .44-.07.69.53.24.6.83 2.09.9 2.24.08.15.13.33.03.53-.1.2-.15.33-.3.5-.15.18-.32.39-.45.53-.15.15-.31.31-.13.61.18.3.79 1.3 1.69 2.1 1.16 1.04 2.14 1.36 2.44 1.51.3.15.48.13.66-.08.18-.2.75-.88.95-1.18.2-.3.4-.25.68-.15.28.1 1.76.83 2.06.98.3.15.5.23.58.35.07.13.07.73-.17 1.41z" />
-                </svg>
-              </a>
-            </div>
+            <div className="min-h-6" />
           )}
         </div>
       )}

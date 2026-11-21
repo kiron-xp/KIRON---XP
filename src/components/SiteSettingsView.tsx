@@ -5,10 +5,8 @@ import {
   EyeOff,
   ImagePlus,
   KeyRound,
-  MessageCircle,
   RotateCcw,
   Save,
-  Send,
   ShieldAlert,
   SlidersHorizontal,
   Sparkles,
@@ -17,6 +15,7 @@ import {
 import { DEFAULT_SITE_ENTRY_CONFIG } from '../lib/firestoreVault';
 import { compressImageForVault, sha256Hex, verifySiteEntryPassword } from '../lib/storage';
 import { Language, SiteEntryConfig } from '../types';
+import { SOCIAL_APPS, SocialAppLogoSvg } from './SocialAppIcons';
 
 const DEFAULT_GATE_WALLPAPER_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_0000000063188246b2dc4e77b1130652_ad6f1a5e.webp`;
 const OVERLAY_STEPS = [0, 10, 20, 25, 30, 40, 50, 60, 70, 80];
@@ -37,6 +36,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
   const [bio, setBio] = useState(config.bio);
   const [telegramUrl, setTelegramUrl] = useState(config.telegramUrl ?? '');
   const [whatsappUrl, setWhatsappUrl] = useState(config.whatsappUrl ?? '');
+  const [tiktokUrl, setTiktokUrl] = useState(config.tiktokUrl ?? '');
+  const [instagramUrl, setInstagramUrl] = useState(config.instagramUrl ?? '');
+  const [wechatUrl, setWechatUrl] = useState(config.wechatUrl ?? '');
+  const [facebookUrl, setFacebookUrl] = useState(config.facebookUrl ?? '');
+  const [imoUrl, setImoUrl] = useState(config.imoUrl ?? '');
+  const [messengerUrl, setMessengerUrl] = useState(config.messengerUrl ?? '');
   const [showSocialLinks, setShowSocialLinks] = useState(config.showSocialLinks);
   const [showLogo, setShowLogo] = useState(config.showLogo);
   const [overlayOpacity, setOverlayOpacity] = useState(config.overlayOpacity);
@@ -67,6 +72,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
     setBio(config.bio);
     setTelegramUrl(config.telegramUrl ?? '');
     setWhatsappUrl(config.whatsappUrl ?? '');
+    setTiktokUrl(config.tiktokUrl ?? '');
+    setInstagramUrl(config.instagramUrl ?? '');
+    setWechatUrl(config.wechatUrl ?? '');
+    setFacebookUrl(config.facebookUrl ?? '');
+    setImoUrl(config.imoUrl ?? '');
+    setMessengerUrl(config.messengerUrl ?? '');
     setShowSocialLinks(config.showSocialLinks);
     setShowLogo(config.showLogo);
     setOverlayOpacity(config.overlayOpacity);
@@ -82,6 +93,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
     bio,
     telegramUrl: telegramUrl.trim(),
     whatsappUrl: whatsappUrl.trim(),
+    tiktokUrl: tiktokUrl.trim(),
+    instagramUrl: instagramUrl.trim(),
+    wechatUrl: wechatUrl.trim(),
+    facebookUrl: facebookUrl.trim(),
+    imoUrl: imoUrl.trim(),
+    messengerUrl: messengerUrl.trim(),
     showSocialLinks,
     showLogo,
     overlayOpacity,
@@ -335,12 +352,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {isBn ? 'বায়ো এবং Telegram / WhatsApp' : 'Entry Bio & Social Links'}
+                {isBn ? 'বায়ো এবং ৮টি অ্যাপ লিংক / আইডি' : 'Entry Bio & Social App Links'}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isBn
-                  ? 'পাসওয়ার্ড পেজের নিচে বায়ো এবং ডান দিকে গোল Telegram ও WhatsApp লোগো দেখাবে।'
-                  : 'Shown at the bottom of the entry password screen.'}
+                  ? 'WhatsApp, Telegram, TikTok, Instagram, WeChat, Facebook, imo এবং Messenger এর আইডি/নম্বর যোগ করুন।'
+                  : 'Add your numbers, IDs, or links for all 8 apps shown in the 2-row launcher.'}
               </p>
             </div>
           </div>
@@ -348,7 +365,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                {isBn ? 'বায়ো (নিচে বাম দিকে দেখাবে)' : 'Bio Text (Bottom Left)'}
+                {isBn ? 'বায়ো (নিচে দেখাবে)' : 'Bio Text (Bottom)'}
               </label>
               <span className="text-[11px] text-slate-400">{bio.length}/300</span>
             </div>
@@ -367,33 +384,47 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                <Send className="w-3.5 h-3.5 text-[#229ED9]" />
-                <span>{isBn ? 'Telegram ইউজারনেম বা লিংক' : 'Telegram Username or Link'}</span>
-              </label>
-              <input
-                type="text"
-                value={telegramUrl}
-                onChange={(e) => setTelegramUrl(e.target.value)}
-                placeholder="@username অথবা https://t.me/..."
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" />
-                <span>{isBn ? 'WhatsApp নম্বর বা লিংক' : 'WhatsApp Number or Link'}</span>
-              </label>
-              <input
-                type="text"
-                value={whatsappUrl}
-                onChange={(e) => setWhatsappUrl(e.target.value)}
-                placeholder="+88017... অথবা https://wa.me/..."
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
-              />
-            </div>
+            {SOCIAL_APPS.map((app) => {
+              const valueMap = {
+                whatsappUrl,
+                telegramUrl,
+                tiktokUrl,
+                instagramUrl,
+                wechatUrl,
+                facebookUrl,
+                imoUrl,
+                messengerUrl,
+              };
+              const setterMap = {
+                whatsappUrl: setWhatsappUrl,
+                telegramUrl: setTelegramUrl,
+                tiktokUrl: setTiktokUrl,
+                instagramUrl: setInstagramUrl,
+                wechatUrl: setWechatUrl,
+                facebookUrl: setFacebookUrl,
+                imoUrl: setImoUrl,
+                messengerUrl: setMessengerUrl,
+              };
+              return (
+                <div key={app.id}>
+                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    <span
+                      className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${app.badgeClass}`}
+                    >
+                      <SocialAppLogoSvg id={app.id} className="w-3.5 h-3.5" />
+                    </span>
+                    <span>{app.label}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={valueMap[app.configKey]}
+                    onChange={(e) => setterMap[app.configKey](e.target.value)}
+                    placeholder={isBn ? app.placeholderBn : app.placeholderEn}
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                  />
+                </div>
+              );
+            })}
           </div>
 
           <label className="flex items-center gap-2.5 cursor-pointer select-none pt-1">
@@ -405,8 +436,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
             />
             <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
               {isBn
-                ? 'প্রবেশ পেজের নিচে ডান দিকে Telegram ও WhatsApp গোল লোগো দেখান'
-                : 'Show circular Telegram & WhatsApp buttons on bottom-right'}
+                ? 'প্রবেশ পেজের মাঝখানে ২ লাইনে ৮টি অ্যাপ লোগো দেখান'
+                : 'Show all 8 app icons in a 2-row grid on the entry page'}
             </span>
           </label>
         </div>

@@ -123,6 +123,12 @@ export interface SiteEntryConfig {
   bio: string;
   telegramUrl?: string;
   whatsappUrl?: string;
+  tiktokUrl?: string;
+  instagramUrl?: string;
+  wechatUrl?: string;
+  facebookUrl?: string;
+  imoUrl?: string;
+  messengerUrl?: string;
   showSocialLinks: boolean;
   showLogo: boolean;
   overlayOpacity: number;

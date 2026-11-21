@@ -133,8 +133,10 @@ service cloud.firestore {
         ])
         && data.keys().hasOnly([
           'id', 'headerTitle', 'lockTitle', 'lockDesc', 'unlockBtnText',
-          'bio', 'telegramUrl', 'whatsappUrl', 'showSocialLinks', 'showLogo',
-          'overlayOpacity', 'wallpaperDataUrl', 'entryPasswordHash', 'updatedAt'
+          'bio', 'telegramUrl', 'whatsappUrl', 'tiktokUrl', 'instagramUrl',
+          'wechatUrl', 'facebookUrl', 'imoUrl', 'messengerUrl',
+          'showSocialLinks', 'showLogo', 'overlayOpacity', 'wallpaperDataUrl',
+          'entryPasswordHash', 'updatedAt'
         ])
         && data.id == configId
         && data.headerTitle is string && data.headerTitle.size() <= 80
@@ -144,6 +146,12 @@ service cloud.firestore {
         && data.bio is string && data.bio.size() <= 300
         && isValidOptionalString(data, 'telegramUrl', 300)
         && isValidOptionalString(data, 'whatsappUrl', 300)
+        && isValidOptionalString(data, 'tiktokUrl', 300)
+        && isValidOptionalString(data, 'instagramUrl', 300)
+        && isValidOptionalString(data, 'wechatUrl', 300)
+        && isValidOptionalString(data, 'facebookUrl', 300)
+        && isValidOptionalString(data, 'imoUrl', 300)
+        && isValidOptionalString(data, 'messengerUrl', 300)
         && data.showSocialLinks is bool
         && data.showLogo is bool
         && data.overlayOpacity is number && data.overlayOpacity >= 0 && data.overlayOpacity <= 80
@@ -265,8 +273,10 @@ service cloud.firestore {
         && incoming().id == existing().id
         && incoming().diff(existing()).affectedKeys().hasOnly([
           'headerTitle', 'lockTitle', 'lockDesc', 'unlockBtnText',
-          'bio', 'telegramUrl', 'whatsappUrl', 'showSocialLinks', 'showLogo',
-          'overlayOpacity', 'wallpaperDataUrl', 'entryPasswordHash', 'updatedAt'
+          'bio', 'telegramUrl', 'whatsappUrl', 'tiktokUrl', 'instagramUrl',
+          'wechatUrl', 'facebookUrl', 'imoUrl', 'messengerUrl',
+          'showSocialLinks', 'showLogo', 'overlayOpacity', 'wallpaperDataUrl',
+          'entryPasswordHash', 'updatedAt'
         ]);
     }
   }

@@ -44,6 +44,12 @@ export const DEFAULT_SITE_ENTRY_CONFIG: SiteEntryConfig = {
   bio: '',
   telegramUrl: '',
   whatsappUrl: '',
+  tiktokUrl: '',
+  instagramUrl: '',
+  wechatUrl: '',
+  facebookUrl: '',
+  imoUrl: '',
+  messengerUrl: '',
   showSocialLinks: true,
   showLogo: true,
   overlayOpacity: 25,
@@ -734,11 +740,22 @@ function cleanSiteEntryConfigPayload(config: SiteEntryConfig): Record<string, un
     updatedAt: Date.now(),
   };
 
-  if (typeof config.telegramUrl === 'string' && config.telegramUrl.trim().length > 0) {
-    payload.telegramUrl = config.telegramUrl.trim().slice(0, 300);
-  }
-  if (typeof config.whatsappUrl === 'string' && config.whatsappUrl.trim().length > 0) {
-    payload.whatsappUrl = config.whatsappUrl.trim().slice(0, 300);
+  const optionalSocialKeys = [
+    'telegramUrl',
+    'whatsappUrl',
+    'tiktokUrl',
+    'instagramUrl',
+    'wechatUrl',
+    'facebookUrl',
+    'imoUrl',
+    'messengerUrl',
+  ] as const;
+
+  for (const key of optionalSocialKeys) {
+    const val = config[key];
+    if (typeof val === 'string' && val.trim().length > 0) {
+      payload[key] = val.trim().slice(0, 300);
+    }
   }
   if (
     typeof config.wallpaperDataUrl === 'string' &&
@@ -766,6 +783,12 @@ export async function saveSiteEntryConfig(config: SiteEntryConfig): Promise<Site
     bio: String(payload.bio),
     telegramUrl: typeof payload.telegramUrl === 'string' ? payload.telegramUrl : '',
     whatsappUrl: typeof payload.whatsappUrl === 'string' ? payload.whatsappUrl : '',
+    tiktokUrl: typeof payload.tiktokUrl === 'string' ? payload.tiktokUrl : '',
+    instagramUrl: typeof payload.instagramUrl === 'string' ? payload.instagramUrl : '',
+    wechatUrl: typeof payload.wechatUrl === 'string' ? payload.wechatUrl : '',
+    facebookUrl: typeof payload.facebookUrl === 'string' ? payload.facebookUrl : '',
+    imoUrl: typeof payload.imoUrl === 'string' ? payload.imoUrl : '',
+    messengerUrl: typeof payload.messengerUrl === 'string' ? payload.messengerUrl : '',
     showSocialLinks: Boolean(payload.showSocialLinks),
     showLogo: Boolean(payload.showLogo),
     overlayOpacity: Number(payload.overlayOpacity),
