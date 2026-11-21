@@ -19,6 +19,7 @@ import {
   ProfileMediaKind,
   RecoveryCode,
   SheetEntry,
+  SiteEntryConfig,
   VaultData,
 } from '../types';
 import { db, handleFirestoreError, OperationType } from './firebase';
@@ -29,7 +30,50 @@ const NOTES_PATH = 'notes';
 const SHEETS_PATH = 'sheets';
 const RECOVERY_PATH = 'recoveryCodes';
 const PROFILE_MEDIA_PATH = 'profileMedia';
+const SITE_CONFIG_PATH = 'siteConfig';
+const SITE_CONFIG_DOC_ID = 'entry';
+const SITE_CONFIG_CACHE_KEY = 'kiron_site_entry_cache_v1';
 const MIGRATION_FLAG_KEY = 'kiron_firestore_migrated_v1';
+
+export const DEFAULT_SITE_ENTRY_CONFIG: SiteEntryConfig = {
+  id: SITE_CONFIG_DOC_ID,
+  headerTitle: 'KIRON - XP',
+  lockTitle: 'INFINITY - KIRON - XP',
+  lockDesc: 'ENTER YOUR PASSWORD TO ACCESS THE WEBSITE',
+  unlockBtnText: '',
+  bio: '',
+  telegramUrl: '',
+  whatsappUrl: '',
+  showSocialLinks: true,
+  showLogo: true,
+  overlayOpacity: 25,
+  wallpaperDataUrl: undefined,
+  entryPasswordHash: undefined,
+  updatedAt: 0,
+};
+
+export function loadCachedSiteEntryConfig(): SiteEntryConfig {
+  try {
+    const raw = localStorage.getItem(SITE_CONFIG_CACHE_KEY);
+    if (!raw) return DEFAULT_SITE_ENTRY_CONFIG;
+    const parsed = JSON.parse(raw) as Partial<SiteEntryConfig>;
+    return {
+      ...DEFAULT_SITE_ENTRY_CONFIG,
+      ...parsed,
+      id: SITE_CONFIG_DOC_ID,
+    };
+  } catch {
+    return DEFAULT_SITE_ENTRY_CONFIG;
+  }
+}
+
+function cacheSiteEntryConfig(config: SiteEntryConfig): void {
+  try {
+    localStorage.setItem(SITE_CONFIG_CACHE_KEY, JSON.stringify(config));
+  } catch {
+    // ignore storage quota errors
+  }
+}
 
 const VALID_COLORS: NoteColor[] = ['default', 'emerald', 'amber', 'sky', 'rose', 'violet'];
 const VALID_MEDIA_KINDS: ProfileMediaKind[] = ['photo', 'screenshot', 'video', 'number'];
@@ -671,4 +715,92 @@ export function subscribeToSharedVault(callbacks: SharedVaultCallbacks): Unsubsc
     unsubRecovery();
     unsubProfileMedia();
   };
+}
+
+function cleanSiteEntryConfigPayload(config: SiteEntryConfig): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    id: SITE_CONFIG_DOC_ID,
+    headerTitle: String(config.headerTitle ?? 'KIRON - XP').trim().slice(0, 80) || 'KIRON - XP',
+    lockTitle: String(config.lockTitle ?? 'INFINITY - KIRON - XP').trim().slice(0, 120),
+    lockDesc: String(config.lockDesc ?? 'ENTER YOUR PASSWORD TO ACCESS THE WEBSITE').trim().slice(0, 240),
+    unlockBtnText: String(config.unlockBtnText ?? '').trim().slice(0, 60),
+    bio: String(config.bio ?? '').slice(0, 300),
+    showSocialLinks: Boolean(config.showSocialLinks),
+    showLogo: Boolean(config.showLogo),
+    overlayOpacity:
+      typeof config.overlayOpacity === 'number' && Number.isFinite(config.overlayOpacity)
+        ? Math.max(0, Math.min(80, Math.round(config.overlayOpacity)))
+        : 25,
+    updatedAt: Date.now(),
+  };
+
+  if (typeof config.telegramUrl === 'string' && config.telegramUrl.trim().length > 0) {
+    payload.telegramUrl = config.telegramUrl.trim().slice(0, 300);
+  }
+  if (typeof config.whatsappUrl === 'string' && config.whatsappUrl.trim().length > 0) {
+    payload.whatsappUrl = config.whatsappUrl.trim().slice(0, 300);
+  }
+  if (
+    typeof config.wallpaperDataUrl === 'string' &&
+    config.wallpaperDataUrl.length > 0 &&
+    config.wallpaperDataUrl.length <= 750000
+  ) {
+    payload.wallpaperDataUrl = config.wallpaperDataUrl;
+  }
+  if (typeof config.entryPasswordHash === 'string' && config.entryPasswordHash.length > 0) {
+    payload.entryPasswordHash = config.entryPasswordHash.slice(0, 128);
+  }
+
+  return payload;
+}
+
+export async function saveSiteEntryConfig(config: SiteEntryConfig): Promise<SiteEntryConfig> {
+  const payload = cleanSiteEntryConfigPayload(config);
+  const path = `${SITE_CONFIG_PATH}/${SITE_CONFIG_DOC_ID}`;
+  const normalized: SiteEntryConfig = {
+    id: SITE_CONFIG_DOC_ID,
+    headerTitle: String(payload.headerTitle),
+    lockTitle: String(payload.lockTitle),
+    lockDesc: String(payload.lockDesc),
+    unlockBtnText: String(payload.unlockBtnText),
+    bio: String(payload.bio),
+    telegramUrl: typeof payload.telegramUrl === 'string' ? payload.telegramUrl : '',
+    whatsappUrl: typeof payload.whatsappUrl === 'string' ? payload.whatsappUrl : '',
+    showSocialLinks: Boolean(payload.showSocialLinks),
+    showLogo: Boolean(payload.showLogo),
+    overlayOpacity: Number(payload.overlayOpacity),
+    wallpaperDataUrl: typeof payload.wallpaperDataUrl === 'string' ? payload.wallpaperDataUrl : undefined,
+    entryPasswordHash:
+      typeof payload.entryPasswordHash === 'string' ? payload.entryPasswordHash : undefined,
+    updatedAt: Number(payload.updatedAt),
+  };
+  cacheSiteEntryConfig(normalized);
+  try {
+    await setDoc(doc(db, SITE_CONFIG_PATH, SITE_CONFIG_DOC_ID), payload);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+  return normalized;
+}
+
+export function subscribeToSiteEntryConfig(
+  onConfig: (config: SiteEntryConfig) => void
+): Unsubscribe {
+  return onSnapshot(
+    doc(db, SITE_CONFIG_PATH, SITE_CONFIG_DOC_ID),
+    (snapshot) => {
+      if (!snapshot.exists()) return;
+      const raw = snapshot.data() as Partial<SiteEntryConfig>;
+      const next: SiteEntryConfig = {
+        ...DEFAULT_SITE_ENTRY_CONFIG,
+        ...raw,
+        id: SITE_CONFIG_DOC_ID,
+      };
+      cacheSiteEntryConfig(next);
+      onConfig(next);
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.GET, `${SITE_CONFIG_PATH}/${SITE_CONFIG_DOC_ID}`);
+    }
+  );
 }

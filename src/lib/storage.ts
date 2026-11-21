@@ -205,7 +205,7 @@ const CUSTOM_PROFILE_PASS_FLAG = 'prohori_custom_pass_set';
 const SESSION_PROFILE_PASS_KEY = 'kiron_active_profile_pass';
 const SITE_PASS_HASH_KEY = 'kiron_site_pass_hash_v2';
 
-async function sha256Hex(text: string): Promise<string> {
+export async function sha256Hex(text: string): Promise<string> {
   const bytes = new TextEncoder().encode(text);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return Array.from(new Uint8Array(digest))
@@ -213,10 +213,17 @@ async function sha256Hex(text: string): Promise<string> {
     .join('');
 }
 
-export async function verifySiteEntryPassword(input: string): Promise<boolean> {
+export async function verifySiteEntryPassword(
+  input: string,
+  remoteHash?: string
+): Promise<boolean> {
   const trimmed = input.trim();
   if (!trimmed) return false;
   localStorage.removeItem('kiron_site_pass_hash_v1');
+  if (remoteHash && remoteHash.length >= 32) {
+    const inputHash = await sha256Hex(trimmed);
+    return inputHash === remoteHash;
+  }
   const savedHash = localStorage.getItem(SITE_PASS_HASH_KEY);
   if (!savedHash) {
     return trimmed === '808123';

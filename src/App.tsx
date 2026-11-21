@@ -12,6 +12,7 @@ import {
   Moon,
   Plus,
   ShieldCheck,
+  SlidersHorizontal,
   StickyNote,
   Sun,
   UserCheck,
@@ -22,16 +23,20 @@ import { EmailVaultView } from './components/EmailVaultView';
 import { LockScreen } from './components/LockScreen';
 import { NotesDiaryView } from './components/NotesDiaryView';
 import { SecurityBackupView } from './components/SecurityBackupView';
+import { SiteSettingsView } from './components/SiteSettingsView';
 import { VaultView } from './components/VaultView';
 import {
   deleteAccountDoc,
   deleteEmailDoc,
   deleteNoteDoc,
   deleteProfileMediaDoc,
+  loadCachedSiteEntryConfig,
   migrateLocalDataToFirestoreOnce,
   sanitizeDocId,
   saveProfileMediaDoc,
+  saveSiteEntryConfig,
   subscribeToSharedVault,
+  subscribeToSiteEntryConfig,
   upsertAccountDoc,
   upsertEmailDoc,
   upsertNoteDoc,
@@ -58,6 +63,7 @@ import {
   Language,
   NoteEntry,
   ProfileMediaEntry,
+  SiteEntryConfig,
   ThemeMode,
   VaultData,
 } from './types';
@@ -102,11 +108,19 @@ export default function App() {
   const [editingAccount, setEditingAccount] = useState<AccountEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [siteConfig, setSiteConfig] = useState<SiteEntryConfig>(() => loadCachedSiteEntryConfig());
   const [activeProfile, setActiveProfile] = useState<{ name: string; password: string } | null>(null);
   const vaultRef = useRef<VaultData>(vault);
   vaultRef.current = vault;
 
   const t = getTranslations(lang);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToSiteEntryConfig((next) => {
+      setSiteConfig(next);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -469,13 +483,18 @@ export default function App() {
   };
 
   const handleSiteUnlock = async (password: string): Promise<boolean> => {
-    const valid = await verifySiteEntryPassword(password);
+    const valid = await verifySiteEntryPassword(password, siteConfig.entryPasswordHash);
     if (valid) {
       sessionStorage.setItem('kiron_site_unlocked_v2', '1');
       setSiteUnlocked(true);
       return true;
     }
     return false;
+  };
+
+  const handleSaveSiteConfig = async (next: SiteEntryConfig) => {
+    const saved = await saveSiteEntryConfig(next);
+    setSiteConfig(saved);
   };
 
   if (!siteUnlocked) {
@@ -485,6 +504,7 @@ export default function App() {
         lang={lang}
         theme={theme}
         isSiteGate
+        siteConfig={siteConfig}
         onToggleLang={toggleLang}
         onToggleTheme={toggleTheme}
         onUnlock={handleSiteUnlock}
@@ -526,6 +546,7 @@ export default function App() {
     { key: 'add-email', id: 'email', label: t.menuAddEmail, icon: MailPlus, isAddEmail: true },
     { key: 'add-note', id: 'verify', label: t.menuAddNote, icon: FilePlus, isAddNote: true },
     { key: 'add-media', id: 'security', label: t.menuAddMedia, icon: ImagePlus, isAddMedia: true },
+    { key: 'site-settings', id: 'site-settings', label: t.menuSiteSettings, icon: SlidersHorizontal },
   ];
 
   return (
@@ -780,6 +801,14 @@ export default function App() {
               openAddNonce={mediaAddNonce}
               onAddProfileMedia={handleAddProfileMedia}
               onDeleteProfileMedia={handleDeleteProfileMedia}
+            />
+          )}
+
+          {activeTab === 'site-settings' && (
+            <SiteSettingsView
+              lang={lang}
+              config={siteConfig}
+              onSaveConfig={handleSaveSiteConfig}
             />
           )}
         </main>

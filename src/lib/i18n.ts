@@ -11,6 +11,7 @@ export interface Translations {
   menuAddNote: string;
   navSecurity: string;
   menuAddMedia: string;
+  menuSiteSettings: string;
   lockVault: string;
   unlockVault: string;
   vaultLockedTitle: string;
@@ -320,6 +321,7 @@ const bn: Translations = {
   menuAddNote: 'XP - 3',
   navSecurity: 'PROFILE',
   menuAddMedia: 'XP - 4',
+  menuSiteSettings: 'KIRON',
   lockVault: 'ভল্ট লক করুন',
   unlockVault: 'ভল্ট আনলক করুন',
   vaultLockedTitle: 'প্রহরী ভল্ট লক করা আছে',
@@ -621,6 +623,7 @@ const en: Translations = {
   menuAddNote: 'XP - 3',
   navSecurity: 'PROFILE',
   menuAddMedia: 'XP - 4',
+  menuSiteSettings: 'KIRON',
   lockVault: 'Lock Vault',
   unlockVault: 'Unlock Vault',
   vaultLockedTitle: 'Prohori Vault is Locked',

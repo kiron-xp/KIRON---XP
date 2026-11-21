@@ -286,6 +286,79 @@
         }
       },
       "required": ["id", "mediaId", "index", "data"]
+    },
+    "SiteEntryConfig": {
+      "title": "SiteEntryConfig",
+      "description": "Publicly synced entry gate appearance, bio, social links, and password hash.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "headerTitle": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "lockTitle": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "lockDesc": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "unlockBtnText": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "telegramUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "whatsappUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "showSocialLinks": {
+          "type": "boolean"
+        },
+        "showLogo": {
+          "type": "boolean"
+        },
+        "overlayOpacity": {
+          "type": "number"
+        },
+        "wallpaperDataUrl": {
+          "type": "string",
+          "maxLength": 750000
+        },
+        "entryPasswordHash": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "headerTitle",
+        "lockTitle",
+        "lockDesc",
+        "unlockBtnText",
+        "bio",
+        "showSocialLinks",
+        "showLogo",
+        "overlayOpacity",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -316,6 +389,10 @@
     "/profileMedia/{mediaId}/chunks/{chunkId}": {
       "schema": { "$ref": "#/entities/ProfileMediaChunk" },
       "description": "Chunked payload storage for videos inside PROFILE."
+    },
+    "/siteConfig/{configId}": {
+      "schema": { "$ref": "#/entities/SiteEntryConfig" },
+      "description": "Shared entry screen bio, social links, appearance, and password hash."
     }
   }
 }

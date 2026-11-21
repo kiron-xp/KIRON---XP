@@ -126,6 +126,32 @@ service cloud.firestore {
         && data.data is string && data.data.size() >= 1 && data.data.size() <= 780000;
     }
 
+    function isValidSiteEntryConfig(data, configId) {
+      return data.keys().hasAll([
+          'id', 'headerTitle', 'lockTitle', 'lockDesc', 'unlockBtnText',
+          'bio', 'showSocialLinks', 'showLogo', 'overlayOpacity', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'headerTitle', 'lockTitle', 'lockDesc', 'unlockBtnText',
+          'bio', 'telegramUrl', 'whatsappUrl', 'showSocialLinks', 'showLogo',
+          'overlayOpacity', 'wallpaperDataUrl', 'entryPasswordHash', 'updatedAt'
+        ])
+        && data.id == configId
+        && data.headerTitle is string && data.headerTitle.size() <= 80
+        && data.lockTitle is string && data.lockTitle.size() <= 120
+        && data.lockDesc is string && data.lockDesc.size() <= 240
+        && data.unlockBtnText is string && data.unlockBtnText.size() <= 60
+        && data.bio is string && data.bio.size() <= 300
+        && isValidOptionalString(data, 'telegramUrl', 300)
+        && isValidOptionalString(data, 'whatsappUrl', 300)
+        && data.showSocialLinks is bool
+        && data.showLogo is bool
+        && data.overlayOpacity is number && data.overlayOpacity >= 0 && data.overlayOpacity <= 80
+        && isValidOptionalString(data, 'wallpaperDataUrl', 750000)
+        && isValidOptionalString(data, 'entryPasswordHash', 128)
+        && data.updatedAt is number && data.updatedAt > 0;
+    }
+
     // Connection validation probe doc
     match /test/{docId} {
       allow get: if isValidId(docId);
@@ -227,6 +253,21 @@ service cloud.firestore {
           && exists(/databases/$(database)/documents/profileMedia/$(mediaId));
         allow delete: if isValidId(mediaId) && isValidId(chunkId);
       }
+    }
+
+    // Shared Entry Screen Settings (Bio, Social Links, Password Hash, Appearance)
+    match /siteConfig/{configId} {
+      allow get: if isValidId(configId);
+      allow list: if resource.data.updatedAt > 0;
+      allow create: if isValidId(configId) && isValidSiteEntryConfig(incoming(), configId);
+      allow update: if isValidId(configId)
+        && isValidSiteEntryConfig(incoming(), configId)
+        && incoming().id == existing().id
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'headerTitle', 'lockTitle', 'lockDesc', 'unlockBtnText',
+          'bio', 'telegramUrl', 'whatsappUrl', 'showSocialLinks', 'showLogo',
+          'overlayOpacity', 'wallpaperDataUrl', 'entryPasswordHash', 'updatedAt'
+        ]);
     }
   }
 }

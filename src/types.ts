@@ -114,6 +114,23 @@ export interface ProfileSummary {
   updatedAt: number;
 }
 
+export interface SiteEntryConfig {
+  id: string;
+  headerTitle: string;
+  lockTitle: string;
+  lockDesc: string;
+  unlockBtnText: string;
+  bio: string;
+  telegramUrl?: string;
+  whatsappUrl?: string;
+  showSocialLinks: boolean;
+  showLogo: boolean;
+  overlayOpacity: number;
+  wallpaperDataUrl?: string;
+  entryPasswordHash?: string;
+  updatedAt: number;
+}
+
 export type Language = 'bn' | 'en';
 export type ThemeMode = 'light' | 'dark';
-export type ActiveTab = 'vault' | 'add' | 'email' | 'verify' | 'security';
+export type ActiveTab = 'vault' | 'add' | 'email' | 'verify' | 'security' | 'site-settings';
