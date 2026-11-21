@@ -42,6 +42,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
   const [facebookUrl, setFacebookUrl] = useState(config.facebookUrl ?? '');
   const [imoUrl, setImoUrl] = useState(config.imoUrl ?? '');
   const [messengerUrl, setMessengerUrl] = useState(config.messengerUrl ?? '');
+  const [whatsappUrl2, setWhatsappUrl2] = useState(config.whatsappUrl2 ?? '');
+  const [telegramUrl2, setTelegramUrl2] = useState(config.telegramUrl2 ?? '');
   const [showSocialLinks, setShowSocialLinks] = useState(config.showSocialLinks);
   const [showLogo, setShowLogo] = useState(config.showLogo);
   const [overlayOpacity, setOverlayOpacity] = useState(config.overlayOpacity);
@@ -78,6 +80,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
     setFacebookUrl(config.facebookUrl ?? '');
     setImoUrl(config.imoUrl ?? '');
     setMessengerUrl(config.messengerUrl ?? '');
+    setWhatsappUrl2(config.whatsappUrl2 ?? '');
+    setTelegramUrl2(config.telegramUrl2 ?? '');
     setShowSocialLinks(config.showSocialLinks);
     setShowLogo(config.showLogo);
     setOverlayOpacity(config.overlayOpacity);
@@ -99,6 +103,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
     facebookUrl: facebookUrl.trim(),
     imoUrl: imoUrl.trim(),
     messengerUrl: messengerUrl.trim(),
+    whatsappUrl2: whatsappUrl2.trim(),
+    telegramUrl2: telegramUrl2.trim(),
     showSocialLinks,
     showLogo,
     overlayOpacity,
@@ -352,12 +358,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {isBn ? 'বায়ো এবং ৮টি অ্যাপ লিংক / আইডি' : 'Entry Bio & Social App Links'}
+                {isBn ? 'বায়ো এবং ১০টি অ্যাপ লিংক / আইডি' : 'Entry Bio & Social App Links'}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {isBn
-                  ? 'WhatsApp, Telegram, TikTok, Instagram, WeChat, Facebook, imo এবং Messenger এর আইডি/নম্বর যোগ করুন।'
-                  : 'Add your numbers, IDs, or links for all 8 apps shown in the 2-row launcher.'}
+                  ? '২টি WhatsApp, ২টি Telegram, TikTok, Instagram, WeChat, Facebook, imo এবং Messenger এর আইডি/নম্বর যোগ করুন।'
+                  : 'Add your numbers, IDs, or links for all 10 apps shown in the 5×2 launcher.'}
               </p>
             </div>
           </div>
@@ -394,6 +400,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 facebookUrl,
                 imoUrl,
                 messengerUrl,
+                whatsappUrl2,
+                telegramUrl2,
               };
               const setterMap = {
                 whatsappUrl: setWhatsappUrl,
@@ -404,16 +412,18 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 facebookUrl: setFacebookUrl,
                 imoUrl: setImoUrl,
                 messengerUrl: setMessengerUrl,
+                whatsappUrl2: setWhatsappUrl2,
+                telegramUrl2: setTelegramUrl2,
               };
               return (
                 <div key={app.id}>
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     <span
-                      className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${app.badgeClass}`}
+                      className={`relative w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${app.badgeClass}`}
                     >
                       <SocialAppLogoSvg id={app.id} className="w-3.5 h-3.5" />
                     </span>
-                    <span>{app.label}</span>
+                    <span>{app.settingsLabel}</span>
                   </label>
                   <input
                     type="text"
@@ -436,8 +446,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
             />
             <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
               {isBn
-                ? 'প্রবেশ পেজের মাঝখানে ২ লাইনে ৮টি অ্যাপ লোগো দেখান'
-                : 'Show all 8 app icons in a 2-row grid on the entry page'}
+                ? 'প্রবেশ পেজে ৫×২ লাইনে ১০টি অ্যাপ লোগো দেখান'
+                : 'Show all 10 app icons in a 5×2 grid on the entry page'}
             </span>
           </label>
         </div>

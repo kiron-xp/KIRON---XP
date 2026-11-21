@@ -9,7 +9,9 @@ export type SocialAppId =
   | 'wechat'
   | 'facebook'
   | 'imo'
-  | 'messenger';
+  | 'messenger'
+  | 'whatsapp2'
+  | 'telegram2';
 
 export type SocialConfigKey =
   | 'whatsappUrl'
@@ -19,29 +21,35 @@ export type SocialConfigKey =
   | 'wechatUrl'
   | 'facebookUrl'
   | 'imoUrl'
-  | 'messengerUrl';
+  | 'messengerUrl'
+  | 'whatsappUrl2'
+  | 'telegramUrl2';
 
 export interface SocialAppMeta {
   id: SocialAppId;
   label: string;
+  settingsLabel: string;
   configKey: SocialConfigKey;
   placeholderBn: string;
   placeholderEn: string;
   badgeClass: string;
+  secondaryBadge?: string;
 }
 
 export const SOCIAL_APPS: SocialAppMeta[] = [
   {
     id: 'whatsapp',
     label: 'WhatsApp',
+    settingsLabel: 'WhatsApp (1)',
     configKey: 'whatsappUrl',
-    placeholderBn: '+88017... অথবা https://wa.me/...',
+    placeholderBn: '017... অথবা +88017... বা লিংক',
     placeholderEn: '+88017... or https://wa.me/...',
     badgeClass: 'bg-[#25D366] text-white',
   },
   {
     id: 'telegram',
     label: 'Telegram',
+    settingsLabel: 'Telegram (1)',
     configKey: 'telegramUrl',
     placeholderBn: '@username অথবা https://t.me/...',
     placeholderEn: '@username or https://t.me/...',
@@ -50,6 +58,7 @@ export const SOCIAL_APPS: SocialAppMeta[] = [
   {
     id: 'tiktok',
     label: 'TikTok',
+    settingsLabel: 'TikTok',
     configKey: 'tiktokUrl',
     placeholderBn: '@tiktok_id অথবা TikTok লিংক',
     placeholderEn: '@tiktok_id or TikTok URL',
@@ -58,6 +67,7 @@ export const SOCIAL_APPS: SocialAppMeta[] = [
   {
     id: 'instagram',
     label: 'Instagram',
+    settingsLabel: 'Instagram',
     configKey: 'instagramUrl',
     placeholderBn: '@instagram_id অথবা প্রোফাইল লিংক',
     placeholderEn: '@instagram_id or profile URL',
@@ -66,14 +76,16 @@ export const SOCIAL_APPS: SocialAppMeta[] = [
   {
     id: 'wechat',
     label: 'WeChat',
+    settingsLabel: 'WeChat',
     configKey: 'wechatUrl',
-    placeholderBn: 'WeChat আইডি (যেমন: wxid_...)',
+    placeholderBn: 'WeChat আইডি অথবা লিংক',
     placeholderEn: 'WeChat ID or link',
     badgeClass: 'bg-[#07C160] text-white',
   },
   {
     id: 'facebook',
     label: 'Facebook',
+    settingsLabel: 'Facebook',
     configKey: 'facebookUrl',
     placeholderBn: 'Facebook আইডি বা প্রোফাইল লিংক',
     placeholderEn: 'Facebook username or profile URL',
@@ -82,6 +94,7 @@ export const SOCIAL_APPS: SocialAppMeta[] = [
   {
     id: 'imo',
     label: 'imo',
+    settingsLabel: 'imo',
     configKey: 'imoUrl',
     placeholderBn: 'imo নম্বর বা আইডি / লিংক',
     placeholderEn: 'imo number, ID, or invite URL',
@@ -90,77 +103,148 @@ export const SOCIAL_APPS: SocialAppMeta[] = [
   {
     id: 'messenger',
     label: 'Messenger',
+    settingsLabel: 'Messenger',
     configKey: 'messengerUrl',
     placeholderBn: 'Messenger আইডি বা m.me/ লিংক',
     placeholderEn: 'Messenger username or m.me link',
     badgeClass: 'bg-gradient-to-tr from-[#006AFF] via-[#A033FF] to-[#FF5280] text-white',
   },
+  {
+    id: 'whatsapp2',
+    label: 'WhatsApp',
+    settingsLabel: 'WhatsApp (2)',
+    configKey: 'whatsappUrl2',
+    placeholderBn: '২য় WhatsApp নম্বর অথবা লিংক',
+    placeholderEn: '2nd WhatsApp number or link',
+    badgeClass: 'bg-[#25D366] text-white',
+    secondaryBadge: '2',
+  },
+  {
+    id: 'telegram2',
+    label: 'Telegram',
+    settingsLabel: 'Telegram (2)',
+    configKey: 'telegramUrl2',
+    placeholderBn: '২য় Telegram ইউজারনেম বা লিংক',
+    placeholderEn: '2nd Telegram username or link',
+    badgeClass: 'bg-gradient-to-b from-[#37aee2] to-[#1e96c8] text-white',
+    secondaryBadge: '2',
+  },
 ];
 
 export type ResolvedSocialAction =
   | { type: 'link'; href: string }
-  | { type: 'modal'; label: string; value: string };
+  | { type: 'modal'; label: string; value: string; openHref?: string };
+
+function normalizeWhatsAppLink(raw: string): string {
+  if (!raw) return 'https://wa.me';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^(wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com)\//i.test(raw)) {
+    return `https://${raw}`;
+  }
+  let digits = raw.replace(/[^\d]/g, '');
+  if (digits.startsWith('00')) {
+    digits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith('01')) {
+    digits = `88${digits}`;
+  }
+  return digits ? `https://wa.me/${digits}` : 'https://wa.me';
+}
+
+function normalizeTelegramLink(raw: string): string {
+  if (!raw) return 'https://t.me';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (/^(t\.me|telegram\.me)\//i.test(raw)) {
+    return `https://${raw}`;
+  }
+  if (/^\+\d{6,}$/.test(raw.replace(/[\s-]/g, ''))) {
+    return `https://t.me/${raw.replace(/[\s-]/g, '')}`;
+  }
+  const handle = raw.replace(/^@+/, '').replace(/^\/+/, '');
+  return handle ? `https://t.me/${handle}` : 'https://t.me';
+}
 
 export function resolveSocialAppAction(
   id: SocialAppId,
   config?: SiteEntryConfig
 ): ResolvedSocialAction {
-  const raw = (config?.[SOCIAL_APPS.find((a) => a.id === id)!.configKey] ?? '').trim();
+  const meta = SOCIAL_APPS.find((a) => a.id === id)!;
+  const raw = (config?.[meta.configKey] ?? '').trim();
 
   switch (id) {
-    case 'whatsapp': {
-      if (!raw) return { type: 'link', href: 'https://wa.me' };
-      if (/^https?:\/\//i.test(raw)) return { type: 'link', href: raw };
-      const digits = raw.replace(/[^\d]/g, '');
-      return { type: 'link', href: digits ? `https://wa.me/${digits}` : 'https://wa.me' };
-    }
-    case 'telegram': {
-      if (!raw) return { type: 'link', href: 'https://t.me' };
-      if (/^https?:\/\//i.test(raw)) return { type: 'link', href: raw };
-      const handle = raw.replace(/^@+/, '').replace(/^https?:\/\/t\.me\//i, '').replace(/^t\.me\//i, '');
-      return { type: 'link', href: handle ? `https://t.me/${handle}` : 'https://t.me' };
-    }
+    case 'whatsapp':
+    case 'whatsapp2':
+      return { type: 'link', href: normalizeWhatsAppLink(raw) };
+
+    case 'telegram':
+    case 'telegram2':
+      return { type: 'link', href: normalizeTelegramLink(raw) };
+
     case 'tiktok': {
       if (!raw) return { type: 'link', href: 'https://www.tiktok.com' };
       if (/^https?:\/\//i.test(raw)) return { type: 'link', href: raw };
-      const handle = raw.replace(/^@+/, '');
+      if (/^(www\.)?tiktok\.com\//i.test(raw)) return { type: 'link', href: `https://${raw}` };
+      const handle = raw.replace(/^@+/, '').replace(/^\/+/, '');
       return {
         type: 'link',
         href: handle ? `https://www.tiktok.com/@${handle}` : 'https://www.tiktok.com',
       };
     }
+
     case 'instagram': {
       if (!raw) return { type: 'link', href: 'https://www.instagram.com' };
       if (/^https?:\/\//i.test(raw)) return { type: 'link', href: raw };
-      const handle = raw.replace(/^@+/, '');
+      if (/^(www\.)?instagram\.com\//i.test(raw)) return { type: 'link', href: `https://${raw}` };
+      const handle = raw.replace(/^@+/, '').replace(/^\/+/, '');
       return {
         type: 'link',
         href: handle ? `https://www.instagram.com/${handle}` : 'https://www.instagram.com',
       };
     }
+
     case 'wechat': {
       if (!raw) return { type: 'link', href: 'https://www.wechat.com' };
       if (/^(https?:|weixin:)\/\//i.test(raw)) return { type: 'link', href: raw };
-      return { type: 'modal', label: 'WeChat ID', value: raw };
+      return { type: 'modal', label: 'WeChat ID', value: raw, openHref: 'weixin://' };
     }
+
     case 'facebook': {
       if (!raw) return { type: 'link', href: 'https://www.facebook.com' };
       if (/^https?:\/\//i.test(raw)) return { type: 'link', href: raw };
-      const handle = raw.replace(/^@+/, '');
+      if (/^(www\.|m\.)?(facebook|fb)\.com\//i.test(raw)) {
+        return { type: 'link', href: `https://${raw}` };
+      }
+      if (/^\d{6,}$/.test(raw)) {
+        return { type: 'link', href: `https://www.facebook.com/profile.php?id=${raw}` };
+      }
+      const handle = raw.replace(/^@+/, '').replace(/^\/+/, '');
       return {
         type: 'link',
         href: handle ? `https://www.facebook.com/${handle}` : 'https://www.facebook.com',
       };
     }
+
     case 'imo': {
       if (!raw) return { type: 'link', href: 'https://imo.im' };
       if (/^(https?:|imo:)\/\//i.test(raw)) return { type: 'link', href: raw };
-      return { type: 'modal', label: 'imo', value: raw };
+      const digits = raw.replace(/[^\d+]/g, '');
+      return {
+        type: 'modal',
+        label: 'imo',
+        value: raw,
+        openHref: digits.length >= 6 ? `tel:${digits}` : undefined,
+      };
     }
+
     case 'messenger': {
       if (!raw) return { type: 'link', href: 'https://www.messenger.com' };
       if (/^https?:\/\//i.test(raw)) return { type: 'link', href: raw };
-      const handle = raw.replace(/^@+/, '').replace(/^m\.me\//i, '');
+      if (/^(m\.me|www\.messenger\.com)\//i.test(raw)) {
+        return { type: 'link', href: `https://${raw}` };
+      }
+      const handle = raw
+        .replace(/^https?:\/\/(www\.)?facebook\.com\//i, '')
+        .replace(/^@+/, '')
+        .replace(/^\/+/, '');
       return {
         type: 'link',
         href: handle ? `https://m.me/${handle}` : 'https://www.messenger.com',
@@ -171,19 +255,21 @@ export function resolveSocialAppAction(
 
 export function SocialAppLogoSvg({
   id,
-  className = 'w-6 h-6',
+  className = 'w-7 h-7',
 }: {
   id: SocialAppId;
   className?: string;
 }) {
   switch (id) {
     case 'whatsapp':
+    case 'whatsapp2':
       return (
         <svg viewBox="0 0 24 24" className={`${className} fill-current`} aria-hidden="true">
           <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm5.8 14.01c-.24.68-1.42 1.3-1.97 1.38-.52.08-1.18.11-1.91-.12-.44-.14-1-.33-1.72-.64-3.03-1.31-5.01-4.38-5.16-4.58-.15-.2-1.23-1.64-1.23-3.13s.78-2.22 1.06-2.52c.28-.3.61-.38.81-.38.2 0 .41.01.58.01.19 0 .44-.07.69.53.24.6.83 2.09.9 2.24.08.15.13.33.03.53-.1.2-.15.33-.3.5-.15.18-.32.39-.45.53-.15.15-.31.31-.13.61.18.3.79 1.3 1.69 2.1 1.16 1.04 2.14 1.36 2.44 1.51.3.15.48.13.66-.08.18-.2.75-.88.95-1.18.2-.3.4-.25.68-.15.28.1 1.76.83 2.06.98.3.15.5.23.58.35.07.13.07.73-.17 1.41z" />
         </svg>
       );
     case 'telegram':
+    case 'telegram2':
       return (
         <svg
           viewBox="0 0 24 24"

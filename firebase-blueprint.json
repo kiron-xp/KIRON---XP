@@ -350,6 +350,14 @@
           "type": "string",
           "maxLength": 300
         },
+        "whatsappUrl2": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "telegramUrl2": {
+          "type": "string",
+          "maxLength": 300
+        },
         "showSocialLinks": {
           "type": "boolean"
         },

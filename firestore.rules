@@ -135,6 +135,7 @@ service cloud.firestore {
           'id', 'headerTitle', 'lockTitle', 'lockDesc', 'unlockBtnText',
           'bio', 'telegramUrl', 'whatsappUrl', 'tiktokUrl', 'instagramUrl',
           'wechatUrl', 'facebookUrl', 'imoUrl', 'messengerUrl',
+          'whatsappUrl2', 'telegramUrl2',
           'showSocialLinks', 'showLogo', 'overlayOpacity', 'wallpaperDataUrl',
           'entryPasswordHash', 'updatedAt'
         ])
@@ -152,6 +153,8 @@ service cloud.firestore {
         && isValidOptionalString(data, 'facebookUrl', 300)
         && isValidOptionalString(data, 'imoUrl', 300)
         && isValidOptionalString(data, 'messengerUrl', 300)
+        && isValidOptionalString(data, 'whatsappUrl2', 300)
+        && isValidOptionalString(data, 'telegramUrl2', 300)
         && data.showSocialLinks is bool
         && data.showLogo is bool
         && data.overlayOpacity is number && data.overlayOpacity >= 0 && data.overlayOpacity <= 80
@@ -275,6 +278,7 @@ service cloud.firestore {
           'headerTitle', 'lockTitle', 'lockDesc', 'unlockBtnText',
           'bio', 'telegramUrl', 'whatsappUrl', 'tiktokUrl', 'instagramUrl',
           'wechatUrl', 'facebookUrl', 'imoUrl', 'messengerUrl',
+          'whatsappUrl2', 'telegramUrl2',
           'showSocialLinks', 'showLogo', 'overlayOpacity', 'wallpaperDataUrl',
           'entryPasswordHash', 'updatedAt'
         ]);

@@ -66,6 +66,7 @@ export function LockScreen({
   const [activeSocialPopup, setActiveSocialPopup] = useState<{
     label: string;
     value: string;
+    openHref?: string;
   } | null>(null);
   const [copiedPopup, setCopiedPopup] = useState(false);
 
@@ -336,21 +337,26 @@ export function LockScreen({
         </div>
       </div>
 
-      {/* Middle 2-Row Mobile App Grid (4x2 centered) */}
+      {/* Middle 2-Row Mobile App Grid (5x2, larger icons, wider horizontal spread, set higher) */}
       {isSiteGate && (
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 min-h-0">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-4 sm:pt-7 px-3 sm:px-6 min-h-0">
           {showSocials && (
-            <div className="w-full max-w-[304px] sm:max-w-[348px] grid grid-cols-4 gap-x-3 gap-y-3 sm:gap-x-5 sm:gap-y-4 justify-items-center">
+            <div className="w-full max-w-[400px] sm:max-w-[500px] grid grid-cols-5 gap-x-2 min-[380px]:gap-x-3.5 sm:gap-x-6 gap-y-3.5 sm:gap-y-4 justify-items-center">
               {SOCIAL_APPS.map((app) => {
                 const action = resolveSocialAppAction(app.id, siteConfig);
                 const iconEl = (
                   <>
                     <span
-                      className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-[0_6px_16px_rgba(0,0,0,0.45)] ring-1 ring-white/30 transition-transform group-hover:scale-105 group-active:scale-95 ${app.badgeClass}`}
+                      className={`relative w-12 h-12 min-[380px]:w-13 min-[380px]:h-13 sm:w-15 sm:h-15 rounded-2xl flex items-center justify-center shadow-[0_8px_18px_rgba(0,0,0,0.48)] ring-1 ring-white/30 transition-transform group-hover:scale-105 group-active:scale-95 ${app.badgeClass}`}
                     >
-                      <SocialAppLogoSvg id={app.id} className="w-6 h-6" />
+                      <SocialAppLogoSvg id={app.id} className="w-7 h-7 sm:w-8 sm:h-8" />
+                      {app.secondaryBadge && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-slate-900 text-[9px] font-extrabold flex items-center justify-center shadow">
+                          {app.secondaryBadge}
+                        </span>
+                      )}
                     </span>
-                    <span className="mt-1 text-[10px] sm:text-[11px] font-medium text-white/95 tracking-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] truncate max-w-[68px] text-center">
+                    <span className="mt-1 text-[10px] sm:text-[11px] font-medium text-white/95 tracking-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] truncate max-w-[64px] text-center">
                       {app.label}
                     </span>
                   </>
@@ -363,9 +369,13 @@ export function LockScreen({
                       type="button"
                       onClick={() => {
                         setCopiedPopup(false);
-                        setActiveSocialPopup({ label: action.label, value: action.value });
+                        setActiveSocialPopup({
+                          label: action.label,
+                          value: action.value,
+                          openHref: action.openHref,
+                        });
                       }}
-                      aria-label={app.label}
+                      aria-label={app.settingsLabel}
                       className="group flex flex-col items-center cursor-pointer focus:outline-none"
                     >
                       {iconEl}
@@ -379,7 +389,7 @@ export function LockScreen({
                     href={action.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={app.label}
+                    aria-label={app.settingsLabel}
                     className="group flex flex-col items-center focus:outline-none"
                   >
                     {iconEl}
@@ -390,11 +400,11 @@ export function LockScreen({
           )}
 
           {activeSocialPopup && (
-            <div className="mt-3 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-black/75 backdrop-blur-md border border-white/25 text-xs text-white shadow-xl max-w-xs">
+            <div className="mt-3 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 backdrop-blur-md border border-white/25 text-xs text-white shadow-xl max-w-[92vw]">
               <span className="font-semibold text-white/80 shrink-0">
                 {activeSocialPopup.label}:
               </span>
-              <span className="font-mono text-white truncate select-text">
+              <span className="font-mono text-white truncate select-text max-w-[140px]">
                 {activeSocialPopup.value}
               </span>
               <button
@@ -403,8 +413,16 @@ export function LockScreen({
                 className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/15 hover:bg-white/25 text-[11px] font-medium shrink-0 transition-colors"
               >
                 {copiedPopup ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedPopup ? (lang === 'bn' ? 'কপি' : 'Copied') : (lang === 'bn' ? 'কপি' : 'Copy')}</span>
+                <span>{lang === 'bn' ? 'কপি' : copiedPopup ? 'Copied' : 'Copy'}</span>
               </button>
+              {activeSocialPopup.openHref && (
+                <a
+                  href={activeSocialPopup.openHref}
+                  className="px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold shrink-0 transition-colors"
+                >
+                  {lang === 'bn' ? 'খুলুন' : 'Open'}
+                </a>
+              )}
               <button
                 type="button"
                 onClick={() => setActiveSocialPopup(null)}

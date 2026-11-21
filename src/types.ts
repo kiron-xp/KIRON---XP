@@ -129,6 +129,8 @@ export interface SiteEntryConfig {
   facebookUrl?: string;
   imoUrl?: string;
   messengerUrl?: string;
+  whatsappUrl2?: string;
+  telegramUrl2?: string;
   showSocialLinks: boolean;
   showLogo: boolean;
   overlayOpacity: number;

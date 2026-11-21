@@ -50,6 +50,8 @@ export const DEFAULT_SITE_ENTRY_CONFIG: SiteEntryConfig = {
   facebookUrl: '',
   imoUrl: '',
   messengerUrl: '',
+  whatsappUrl2: '',
+  telegramUrl2: '',
   showSocialLinks: true,
   showLogo: true,
   overlayOpacity: 25,
@@ -749,6 +751,8 @@ function cleanSiteEntryConfigPayload(config: SiteEntryConfig): Record<string, un
     'facebookUrl',
     'imoUrl',
     'messengerUrl',
+    'whatsappUrl2',
+    'telegramUrl2',
   ] as const;
 
   for (const key of optionalSocialKeys) {
@@ -789,6 +793,8 @@ export async function saveSiteEntryConfig(config: SiteEntryConfig): Promise<Site
     facebookUrl: typeof payload.facebookUrl === 'string' ? payload.facebookUrl : '',
     imoUrl: typeof payload.imoUrl === 'string' ? payload.imoUrl : '',
     messengerUrl: typeof payload.messengerUrl === 'string' ? payload.messengerUrl : '',
+    whatsappUrl2: typeof payload.whatsappUrl2 === 'string' ? payload.whatsappUrl2 : '',
+    telegramUrl2: typeof payload.telegramUrl2 === 'string' ? payload.telegramUrl2 : '',
     showSocialLinks: Boolean(payload.showSocialLinks),
     showLogo: Boolean(payload.showLogo),
     overlayOpacity: Number(payload.overlayOpacity),
