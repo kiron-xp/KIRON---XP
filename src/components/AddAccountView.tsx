@@ -23,7 +23,7 @@ const ACCOUNT_CATEGORIES = [
   'INSTAGRAM',
   'TELEGRAM',
   'IMO',
-  'PERSONAL',
+  'TIK TOK',
   'GOOGLE',
   'OTHER',
 ] as const;
@@ -155,10 +155,12 @@ export function AddAccountView({
       return;
     }
 
+    const existingAccName = editingAccount?.accountName?.trim();
     onSaveAccount(
       {
         issuer: issuer.trim(),
-        accountName: editingAccount?.accountName || '',
+        accountName:
+          existingAccName && existingAccName.toLowerCase() !== 'user' ? existingAccName : '',
         category,
         caption: caption.trim() || undefined,
         secret: normalizeBase32(secret),
@@ -195,13 +197,6 @@ export function AddAccountView({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-          {editingAccount ? t.editAccount : t.addTitle}
-        </h1>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{t.addSubtitle}</p>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Manual Entry Form */}
         <form

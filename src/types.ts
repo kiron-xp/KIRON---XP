@@ -57,12 +57,30 @@ export interface SheetEntry {
   updatedAt: number;
 }
 
+export type ProfileMediaKind = 'photo' | 'screenshot' | 'video' | 'number';
+
+export interface ProfileMediaEntry {
+  id: string;
+  kind: ProfileMediaKind;
+  title: string;
+  numberValue?: string;
+  note?: string;
+  mimeType: string;
+  fileName?: string;
+  fileSize?: number;
+  dataUrl?: string;
+  chunkCount: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface VaultData {
   accounts: AccountEntry[];
   recoveryCodes: RecoveryCode[];
   notes?: NoteEntry[];
   emails?: EmailEntry[];
   sheets?: SheetEntry[];
+  profileMedia?: ProfileMediaEntry[];
   updatedAt: number;
 }
 

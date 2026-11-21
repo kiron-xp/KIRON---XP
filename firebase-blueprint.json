@@ -18,7 +18,6 @@
         },
         "accountName": {
           "type": "string",
-          "minLength": 1,
           "maxLength": 200
         },
         "category": {
@@ -205,6 +204,88 @@
         }
       },
       "required": ["id", "code", "used"]
+    },
+    "ProfileMediaEntry": {
+      "title": "ProfileMediaEntry",
+      "description": "A photo, screenshot, video, or saved number entry in the PROFILE gallery vault.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["photo", "screenshot", "video", "number"]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "numberValue": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "mimeType": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "fileName": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "fileSize": {
+          "type": "number"
+        },
+        "dataUrl": {
+          "type": "string",
+          "maxLength": 750000
+        },
+        "chunkCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "number"
+        },
+        "updatedAt": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "kind", "title", "mimeType", "chunkCount", "createdAt", "updatedAt"]
+    },
+    "ProfileMediaChunk": {
+      "title": "ProfileMediaChunk",
+      "description": "A base64 chunk for an HD/4K photo, screenshot, or video uploaded to PROFILE.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "mediaId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "index": {
+          "type": "number"
+        },
+        "data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 780000
+        }
+      },
+      "required": ["id", "mediaId", "index", "data"]
     }
   },
   "firestore": {
@@ -227,6 +308,14 @@
     "/recoveryCodes/{codeId}": {
       "schema": { "$ref": "#/entities/RecoveryCode" },
       "description": "Shared emergency recovery codes synced across all unlocked clients."
+    },
+    "/profileMedia/{mediaId}": {
+      "schema": { "$ref": "#/entities/ProfileMediaEntry" },
+      "description": "Shared photos, screenshots, videos, and saved numbers in PROFILE."
+    },
+    "/profileMedia/{mediaId}/chunks/{chunkId}": {
+      "schema": { "$ref": "#/entities/ProfileMediaChunk" },
+      "description": "Chunked payload storage for videos inside PROFILE."
     }
   }
 }

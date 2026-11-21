@@ -203,7 +203,7 @@ export const MAIN_PROFILE_NAME = 'KIRON';
 const MAIN_PROFILE_PASSWORD = 'E5H2b!f@UKg%wz6';
 const CUSTOM_PROFILE_PASS_FLAG = 'prohori_custom_pass_set';
 const SESSION_PROFILE_PASS_KEY = 'kiron_active_profile_pass';
-const SITE_PASS_HASH_KEY = 'kiron_site_pass_hash_v1';
+const SITE_PASS_HASH_KEY = 'kiron_site_pass_hash_v2';
 
 async function sha256Hex(text: string): Promise<string> {
   const bytes = new TextEncoder().encode(text);
@@ -216,9 +216,10 @@ async function sha256Hex(text: string): Promise<string> {
 export async function verifySiteEntryPassword(input: string): Promise<boolean> {
   const trimmed = input.trim();
   if (!trimmed) return false;
+  localStorage.removeItem('kiron_site_pass_hash_v1');
   const savedHash = localStorage.getItem(SITE_PASS_HASH_KEY);
   if (!savedHash) {
-    return trimmed === 'KIRON';
+    return trimmed === '808123';
   }
   const inputHash = await sha256Hex(trimmed);
   return inputHash === savedHash;
@@ -371,6 +372,69 @@ export function resizeImageToDataUrl(file: File, maxSize = 160): Promise<string>
       };
       img.src = reader.result as string;
     };
+    reader.readAsDataURL(file);
+  });
+}
+
+export function compressImageForVault(
+  file: File,
+  maxDimension = 1400,
+  maxChars = 680000
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image format'));
+      img.onload = () => {
+        const tryEncode = (dim: number, quality: number): string => {
+          const canvas = document.createElement('canvas');
+          const scale = Math.min(dim / img.width, dim / img.height, 1);
+          const width = Math.max(1, Math.round(img.width * scale));
+          const height = Math.max(1, Math.round(img.height * scale));
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Canvas context unavailable');
+          ctx.drawImage(img, 0, 0, width, height);
+          const webp = canvas.toDataURL('image/webp', quality);
+          if (webp.startsWith('data:image/webp')) return webp;
+          return canvas.toDataURL('image/jpeg', quality);
+        };
+
+        try {
+          const attempts: Array<[number, number]> = [
+            [maxDimension, 0.86],
+            [maxDimension, 0.72],
+            [Math.round(maxDimension * 0.75), 0.72],
+            [Math.round(maxDimension * 0.55), 0.65],
+            [720, 0.58],
+          ];
+          let last = '';
+          for (const [dim, q] of attempts) {
+            last = tryEncode(dim, q);
+            if (last.length <= maxChars) {
+              resolve(last);
+              return;
+            }
+          }
+          resolve(last);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+export function fileToBase64DataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onload = () => resolve(String(reader.result ?? ''));
     reader.readAsDataURL(file);
   });
 }

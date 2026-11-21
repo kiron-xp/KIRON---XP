@@ -82,9 +82,13 @@ export function VaultView({
     const q = search.trim().toLowerCase();
     return accounts.filter((acc) => {
       if (!q) return true;
+      const cleanAccName =
+        acc.accountName && acc.accountName.trim().toLowerCase() !== 'user'
+          ? acc.accountName.toLowerCase()
+          : '';
       return (
         acc.issuer.toLowerCase().includes(q) ||
-        acc.accountName.toLowerCase().includes(q) ||
+        cleanAccName.includes(q) ||
         (acc.category?.toLowerCase().includes(q) ?? false) ||
         (acc.caption?.toLowerCase().includes(q) ?? false)
       );
@@ -323,7 +327,7 @@ export function VaultView({
                         {acc.issuer}
                       </p>
 
-                      {acc.accountName && (
+                      {acc.accountName && acc.accountName.trim().toLowerCase() !== 'user' && (
                         <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
                           {acc.accountName}
                         </p>
@@ -477,11 +481,12 @@ export function VaultView({
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   {qrAccount.issuer}
                 </p>
-                {qrAccount.accountName && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {qrAccount.accountName}
-                  </p>
-                )}
+                {qrAccount.accountName &&
+                  qrAccount.accountName.trim().toLowerCase() !== 'user' && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {qrAccount.accountName}
+                    </p>
+                  )}
               </div>
             </div>
 

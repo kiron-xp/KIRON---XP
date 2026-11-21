@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Check,
   Copy,
@@ -7,24 +7,19 @@ import {
   PinOff,
   Search,
   StickyNote,
-  Table,
   Trash2,
   X,
 } from 'lucide-react';
 import { Translations } from '../lib/i18n';
-import { NoteColor, NoteEntry, SheetEntry } from '../types';
-import { SheetsPanel } from './SheetsPanel';
+import { NoteColor, NoteEntry } from '../types';
 
 interface NotesDiaryViewProps {
   t: Translations;
   notes: NoteEntry[];
-  sheets: SheetEntry[];
+  openAddNonce?: number;
   onCreateNote: (note: Omit<NoteEntry, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdateNote: (id: string, patch: Partial<Omit<NoteEntry, 'id' | 'createdAt'>>) => void;
   onDeleteNote: (id: string) => void;
-  onCreateSheet: (sheet: Omit<SheetEntry, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  onUpdateSheet: (id: string, patch: Partial<Omit<SheetEntry, 'id' | 'createdAt'>>) => void;
-  onDeleteSheet: (id: string) => void;
 }
 
 const NOTE_COLORS: Array<{
@@ -34,45 +29,33 @@ const NOTE_COLORS: Array<{
 }> = [
   {
     id: 'default',
-    cardClass:
-      'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800',
-    swatchClass:
-      'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600',
+    cardClass: 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800',
+    swatchClass: 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600',
   },
   {
     id: 'emerald',
-    cardClass:
-      'bg-emerald-50/90 dark:bg-emerald-950/45 border-emerald-200 dark:border-emerald-800/70',
-    swatchClass:
-      'bg-emerald-200 dark:bg-emerald-700 border-emerald-400 dark:border-emerald-500',
+    cardClass: 'bg-emerald-50/90 dark:bg-emerald-950/45 border-emerald-200 dark:border-emerald-800/70',
+    swatchClass: 'bg-emerald-200 dark:bg-emerald-700 border-emerald-400 dark:border-emerald-500',
   },
   {
     id: 'amber',
-    cardClass:
-      'bg-amber-50/90 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/70',
-    swatchClass:
-      'bg-amber-200 dark:bg-amber-700 border-amber-400 dark:border-amber-500',
+    cardClass: 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/70',
+    swatchClass: 'bg-amber-200 dark:bg-amber-700 border-amber-400 dark:border-amber-500',
   },
   {
     id: 'sky',
-    cardClass:
-      'bg-sky-50/90 dark:bg-sky-950/45 border-sky-200 dark:border-sky-800/70',
-    swatchClass:
-      'bg-sky-200 dark:bg-sky-700 border-sky-400 dark:border-sky-500',
+    cardClass: 'bg-sky-50/90 dark:bg-sky-950/45 border-sky-200 dark:border-sky-800/70',
+    swatchClass: 'bg-sky-200 dark:bg-sky-700 border-sky-400 dark:border-sky-500',
   },
   {
     id: 'rose',
-    cardClass:
-      'bg-rose-50/90 dark:bg-rose-950/45 border-rose-200 dark:border-rose-800/70',
-    swatchClass:
-      'bg-rose-200 dark:bg-rose-700 border-rose-400 dark:border-rose-500',
+    cardClass: 'bg-rose-50/90 dark:bg-rose-950/45 border-rose-200 dark:border-rose-800/70',
+    swatchClass: 'bg-rose-200 dark:bg-rose-700 border-rose-400 dark:border-rose-500',
   },
   {
     id: 'violet',
-    cardClass:
-      'bg-violet-50/90 dark:bg-violet-950/45 border-violet-200 dark:border-violet-800/70',
-    swatchClass:
-      'bg-violet-200 dark:bg-violet-700 border-violet-400 dark:border-violet-500',
+    cardClass: 'bg-violet-50/90 dark:bg-violet-950/45 border-violet-200 dark:border-violet-800/70',
+    swatchClass: 'bg-violet-200 dark:bg-violet-700 border-violet-400 dark:border-violet-500',
   },
 ];
 
@@ -96,18 +79,14 @@ function formatNoteDate(ts: number): string {
 export function NotesDiaryView({
   t,
   notes,
-  sheets,
+  openAddNonce = 0,
   onCreateNote,
   onUpdateNote,
   onDeleteNote,
-  onCreateSheet,
-  onUpdateSheet,
-  onDeleteSheet,
 }: NotesDiaryViewProps) {
-  const [mode, setMode] = useState<'notes' | 'sheets'>('notes');
   const [search, setSearch] = useState('');
 
-  // Quick Keep-style composer
+  // Composer triggered from Hamburger Menu (XP - 3)
   const [composerOpen, setComposerOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -121,8 +100,39 @@ export function NotesDiaryView({
   const [editColor, setEditColor] = useState<NoteColor>('default');
   const [editPinned, setEditPinned] = useState(false);
 
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target?.closest('[data-note-menu]')) {
+        setOpenMenuId(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (openAddNonce > 0) {
+      setTitle('');
+      setContent('');
+      setColor('default');
+      setPinned(false);
+      setComposerOpen(true);
+    }
+  }, [openAddNonce]);
 
   const filteredNotes = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -191,8 +201,7 @@ export function NotesDiaryView({
   };
 
   const handleCopyNote = async (note: NoteEntry) => {
-    const fullText = [note.title, note.content].filter(Boolean).join('\n\n');
-    if (!fullText) return;
+    const fullText = [note.title, note.content].filter(Boolean).join('\n\n') || 'MD KIRON MONDAL';
     try {
       await navigator.clipboard.writeText(fullText);
       setCopiedId(note.id);
@@ -207,6 +216,7 @@ export function NotesDiaryView({
   const renderNoteCard = (note: NoteEntry) => {
     const isConfirming = confirmDeleteId === note.id;
     const isCopied = copiedId === note.id;
+    const copyLabel = t.secondsShort === 'সে.' ? 'কপি' : 'Copy';
 
     return (
       <article
@@ -215,38 +225,89 @@ export function NotesDiaryView({
           note.color
         )}`}
       >
-        <div
-          onClick={() => openEditor(note)}
-          className="cursor-pointer space-y-2 min-w-0 flex-1"
-        >
-          <div className="flex items-start justify-between gap-2">
-            {note.title ? (
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 break-words leading-snug">
-                {note.title}
-              </h3>
-            ) : (
-              <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 tabular-nums">
-                {formatNoteDate(note.updatedAt)}
-              </span>
-            )}
+        <div className="space-y-2 min-w-0 flex-1">
+          {/* Header: MD KIRON MONDAL + Pencil menu (Edit / Copy / Delete) */}
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+              MD KIRON MONDAL
+            </h3>
 
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onUpdateNote(note.id, { pinned: !note.pinned });
-              }}
-              title={note.pinned ? t.noteUnpinAction : t.notePinAction}
-              aria-label={note.pinned ? t.noteUnpinAction : t.notePinAction}
-              className={`p-1 rounded-md shrink-0 transition-colors ${
-                note.pinned
-                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-600/10'
-                  : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10'
-              }`}
-            >
-              {note.pinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
-            </button>
+            <div className="relative shrink-0" data-note-menu>
+              <button
+                type="button"
+                onClick={() => setOpenMenuId((prev) => (prev === note.id ? null : note.id))}
+                aria-expanded={openMenuId === note.id}
+                aria-haspopup="menu"
+                title={t.editAccount}
+                aria-label={t.editAccount}
+                className={`inline-flex items-center justify-center p-0.5 rounded transition-colors ${
+                  openMenuId === note.id
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200'
+                }`}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+
+              {openMenuId === note.id && (
+                <div
+                  role="menu"
+                  className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1.5 z-40"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      openEditor(note);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span>{t.editAccount}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      handleCopyNote(note);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
+                  >
+                    {isCopied ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )}
+                    <span>{isCopied ? t.copied : copyLabel}</span>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setOpenMenuId(null);
+                      setConfirmDeleteId(isConfirming ? null : note.id);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left transition-colors whitespace-nowrap"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>{t.deleteAccount}</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+
+          {note.title && (
+            <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 break-words leading-snug">
+              {note.title}
+            </p>
+          )}
 
           {note.content && (
             <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words leading-relaxed max-h-52 overflow-hidden">
@@ -255,42 +316,18 @@ export function NotesDiaryView({
           )}
         </div>
 
-        <div className="pt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums truncate">
-            {note.title ? formatNoteDate(note.updatedAt) : ''}
-          </span>
-
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => handleCopyNote(note)}
-              title={t.copyCode}
-              className="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            >
-              {isCopied ? (
-                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <Copy className="w-3.5 h-3.5" />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => openEditor(note)}
-              title={t.editAccount}
-              className="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setConfirmDeleteId(isConfirming ? null : note.id)}
-              title={t.deleteAccount}
-              className="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+        <div className="pt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+          <span className="tabular-nums truncate">{formatNoteDate(note.updatedAt)}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {isCopied && (
+              <span className="inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+                <Check className="w-3 h-3" />
+                <span>{t.copied}</span>
+              </span>
+            )}
+            {note.pinned && (
+              <Pin className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+            )}
           </div>
         </div>
 
@@ -324,47 +361,8 @@ export function NotesDiaryView({
 
   return (
     <div className="space-y-6">
-      {/* Mode Switcher: Notes vs Sheets */}
-      <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-1 gap-1">
-        <button
-          type="button"
-          onClick={() => setMode('notes')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-            mode === 'notes'
-              ? 'bg-emerald-600 text-white'
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <StickyNote className="w-4 h-4" />
-          <span>{t.notesTabLabel}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setMode('sheets')}
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
-            mode === 'sheets'
-              ? 'bg-emerald-600 text-white'
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-        >
-          <Table className="w-4 h-4" />
-          <span>{t.sheetsTabLabel}</span>
-        </button>
-      </div>
-
-      {mode === 'sheets' ? (
-        <SheetsPanel
-          t={t}
-          sheets={sheets}
-          onCreateSheet={onCreateSheet}
-          onUpdateSheet={onUpdateSheet}
-          onDeleteSheet={onDeleteSheet}
-        />
-      ) : (
-        <>
-          {/* Full-Width Search Bar */}
-          {notes.length > 0 && (
+      {/* Full-Width Search Bar */}
+      {notes.length > 0 && (
         <div className="relative w-full">
           <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -387,18 +385,9 @@ export function NotesDiaryView({
         </div>
       )}
 
-      {/* Keep-style Expandable Note Composer */}
-      <div className="max-w-2xl mx-auto">
-        {!composerOpen ? (
-          <button
-            type="button"
-            onClick={() => setComposerOpen(true)}
-            className="w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 text-left text-sm text-slate-500 dark:text-slate-400 shadow-xs transition-colors"
-          >
-            <span>{t.takeNotePlaceholder}</span>
-            <StickyNote className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          </button>
-        ) : (
+      {/* Note Composer (only opened from Hamburger Menu -> XP - 3) */}
+      {composerOpen && (
+        <div className="max-w-2xl mx-auto">
           <form
             onSubmit={handleCreateSubmit}
             className={`rounded-xl border p-4 space-y-3 shadow-sm transition-colors ${getCardColorClass(
@@ -478,11 +467,11 @@ export function NotesDiaryView({
               </div>
             </div>
           </form>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Notes Grid or Empty State */}
-      {notes.length === 0 ? (
+      {notes.length === 0 && !composerOpen ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center max-w-xl mx-auto">
           <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
             <StickyNote className="w-6 h-6" />
@@ -494,7 +483,7 @@ export function NotesDiaryView({
             {t.noteEmptyDesc}
           </p>
         </div>
-      ) : filteredNotes.length === 0 ? (
+      ) : filteredNotes.length === 0 && !composerOpen ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-sm text-slate-500 dark:text-slate-400">
           {t.noteNoMatch}
         </div>
@@ -615,8 +604,6 @@ export function NotesDiaryView({
             </div>
           </form>
         </div>
-      )}
-        </>
       )}
     </div>
   );

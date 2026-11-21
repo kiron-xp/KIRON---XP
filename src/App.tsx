@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Check,
   CheckCircle2,
+  FilePlus,
   Globe,
+  ImagePlus,
   Lock,
   Mail,
   MailPlus,
@@ -21,20 +23,18 @@ import { LockScreen } from './components/LockScreen';
 import { NotesDiaryView } from './components/NotesDiaryView';
 import { SecurityBackupView } from './components/SecurityBackupView';
 import { VaultView } from './components/VaultView';
-import { generateRecoveryCodes } from './lib/crypto/vaultCrypto';
 import {
   deleteAccountDoc,
   deleteEmailDoc,
   deleteNoteDoc,
-  deleteSheetDoc,
+  deleteProfileMediaDoc,
   migrateLocalDataToFirestoreOnce,
-  replaceRecoveryCodesInFirestore,
   sanitizeDocId,
+  saveProfileMediaDoc,
   subscribeToSharedVault,
   upsertAccountDoc,
   upsertEmailDoc,
   upsertNoteDoc,
-  upsertSheetDoc,
 } from './lib/firestoreVault';
 import { getTranslations } from './lib/i18n';
 import {
@@ -57,20 +57,33 @@ import {
   EmailEntry,
   Language,
   NoteEntry,
-  SheetEntry,
+  ProfileMediaEntry,
   ThemeMode,
   VaultData,
 } from './types';
 
-const BRAND_PHOTO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000009a148208932f6c5646168244_7b1691f5.png`;
+const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
+
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const item of items) {
+    if (!seen.has(item.id)) {
+      seen.add(item.id);
+      result.push(item);
+    }
+  }
+  return result;
+}
 
 export default function App() {
   const [lang, setLang] = useState<Language>(() => loadLanguagePreference());
   const [theme, setTheme] = useState<ThemeMode>(() => loadThemePreference());
 
-  const [siteUnlocked, setSiteUnlocked] = useState<boolean>(
-    () => sessionStorage.getItem('kiron_site_unlocked') === '1'
-  );
+  const [siteUnlocked, setSiteUnlocked] = useState<boolean>(() => {
+    sessionStorage.removeItem('kiron_site_unlocked');
+    return sessionStorage.getItem('kiron_site_unlocked_v2') === '1';
+  });
 
   const initialRecord = loadStoredVaultRecord();
   const [isEncrypted, setIsEncrypted] = useState<boolean>(initialRecord.encrypted);
@@ -84,6 +97,8 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('vault');
   const [emailAddNonce, setEmailAddNonce] = useState(0);
+  const [noteAddNonce, setNoteAddNonce] = useState(0);
+  const [mediaAddNonce, setMediaAddNonce] = useState(0);
   const [editingAccount, setEditingAccount] = useState<AccountEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -125,19 +140,30 @@ export default function App() {
 
     const unsubscribe = subscribeToSharedVault({
       onAccounts: (accounts) => {
-        setVault((prev) => ({ ...prev, accounts, updatedAt: Date.now() }));
+        setVault((prev) => ({ ...prev, accounts: dedupeById(accounts), updatedAt: Date.now() }));
       },
       onEmails: (emails) => {
-        setVault((prev) => ({ ...prev, emails, updatedAt: Date.now() }));
+        setVault((prev) => ({ ...prev, emails: dedupeById(emails), updatedAt: Date.now() }));
       },
       onNotes: (notes) => {
-        setVault((prev) => ({ ...prev, notes, updatedAt: Date.now() }));
+        setVault((prev) => ({ ...prev, notes: dedupeById(notes), updatedAt: Date.now() }));
       },
       onSheets: (sheets) => {
-        setVault((prev) => ({ ...prev, sheets, updatedAt: Date.now() }));
+        setVault((prev) => ({ ...prev, sheets: dedupeById(sheets), updatedAt: Date.now() }));
       },
       onRecoveryCodes: (recoveryCodes) => {
-        setVault((prev) => ({ ...prev, recoveryCodes, updatedAt: Date.now() }));
+        setVault((prev) => ({
+          ...prev,
+          recoveryCodes: dedupeById(recoveryCodes),
+          updatedAt: Date.now(),
+        }));
+      },
+      onProfileMedia: (profileMedia) => {
+        setVault((prev) => ({
+          ...prev,
+          profileMedia: dedupeById(profileMedia),
+          updatedAt: Date.now(),
+        }));
       },
     });
 
@@ -202,10 +228,12 @@ export default function App() {
 
   const persistVault = async (nextVault: VaultData, pass: string | null = activePassphrase) => {
     setVault(nextVault);
+    const { profileMedia: _omittedMedia, ...localVaultPayload } = nextVault;
+    void _omittedMedia;
     if (activeProfile) {
-      await savePasswordProfileVault(activeProfile.name, activeProfile.password, nextVault);
+      await savePasswordProfileVault(activeProfile.name, activeProfile.password, localVaultPayload);
     } else {
-      await saveVaultData(nextVault, pass);
+      await saveVaultData(localVaultPayload, pass);
     }
   };
 
@@ -262,7 +290,7 @@ export default function App() {
         id: sanitizeDocId(rawId),
         createdAt: Date.now(),
       };
-      nextAccounts = [savedEntry, ...current.accounts];
+      nextAccounts = dedupeById([savedEntry, ...current.accounts]);
     }
 
     await persistVault({ ...current, accounts: nextAccounts });
@@ -314,7 +342,7 @@ export default function App() {
       updatedAt: now,
     };
     const currentNotes = current.notes ?? [];
-    await persistVault({ ...current, notes: [newNote, ...currentNotes] });
+    await persistVault({ ...current, notes: dedupeById([newNote, ...currentNotes]) });
     showToast(t.noteSavedToast);
     try {
       await upsertNoteDoc(newNote);
@@ -370,7 +398,7 @@ export default function App() {
       updatedAt: now,
     };
     const currentEmails = current.emails ?? [];
-    await persistVault({ ...current, emails: [newEntry, ...currentEmails] });
+    await persistVault({ ...current, emails: dedupeById([newEntry, ...currentEmails]) });
     showToast(t.emailSavedToast);
     try {
       await upsertEmailDoc(newEntry);
@@ -414,68 +442,27 @@ export default function App() {
     }
   };
 
-  const handleCreateSheet = async (
-    data: Omit<SheetEntry, 'id' | 'createdAt' | 'updatedAt'>
+  const handleAddProfileMedia = async (
+    entry: ProfileMediaEntry,
+    onProgress?: (pct: number) => void
   ) => {
-    const current = vaultRef.current;
-    const now = Date.now();
-    const rawId = crypto.randomUUID ? crypto.randomUUID() : `sheet-${now}`;
-    const newSheet: SheetEntry = {
-      ...data,
-      id: sanitizeDocId(rawId),
-      createdAt: now,
-      updatedAt: now,
-    };
-    const currentSheets = current.sheets ?? [];
-    await persistVault({ ...current, sheets: [newSheet, ...currentSheets] });
-    showToast(t.sheetSavedToast);
-    try {
-      await upsertSheetDoc(newSheet);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleUpdateSheet = async (
-    id: string,
-    patch: Partial<Omit<SheetEntry, 'id' | 'createdAt'>>
-  ) => {
-    const current = vaultRef.current;
-    const currentSheets = current.sheets ?? [];
-    const target = currentSheets.find((item) => item.id === id);
-    if (!target) return;
-    const updatedSheet: SheetEntry = {
-      ...target,
-      ...patch,
+    const saved = await saveProfileMediaDoc(entry, onProgress);
+    setVault((prev) => ({
+      ...prev,
+      profileMedia: dedupeById([saved, ...(prev.profileMedia ?? [])]),
       updatedAt: Date.now(),
-    };
-    const nextSheets = currentSheets.map((item) => (item.id === id ? updatedSheet : item));
-    await persistVault({ ...current, sheets: nextSheets });
-    try {
-      await upsertSheetDoc(updatedSheet);
-    } catch (err) {
-      console.error(err);
-    }
+    }));
+    showToast(t.mediaSavedToast);
   };
 
-  const handleDeleteSheet = async (id: string) => {
-    const current = vaultRef.current;
-    const currentSheets = current.sheets ?? [];
-    const nextSheets = currentSheets.filter((item) => item.id !== id);
-    await persistVault({ ...current, sheets: nextSheets });
+  const handleDeleteProfileMedia = async (id: string) => {
+    setVault((prev) => ({
+      ...prev,
+      profileMedia: (prev.profileMedia ?? []).filter((item) => item.id !== id),
+      updatedAt: Date.now(),
+    }));
     try {
-      await deleteSheetDoc(id);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleRegenerateRecoveryCodes = async () => {
-    const current = vaultRef.current;
-    const nextCodes = generateRecoveryCodes(8);
-    await persistVault({ ...current, recoveryCodes: nextCodes });
-    try {
-      await replaceRecoveryCodesInFirestore(current.recoveryCodes, nextCodes);
+      await deleteProfileMediaDoc(id);
     } catch (err) {
       console.error(err);
     }
@@ -484,7 +471,7 @@ export default function App() {
   const handleSiteUnlock = async (password: string): Promise<boolean> => {
     const valid = await verifySiteEntryPassword(password);
     if (valid) {
-      sessionStorage.setItem('kiron_site_unlocked', '1');
+      sessionStorage.setItem('kiron_site_unlocked_v2', '1');
       setSiteUnlocked(true);
       return true;
     }
@@ -532,13 +519,13 @@ export default function App() {
     label: string;
     icon: typeof ShieldCheck;
     isAddEmail?: boolean;
+    isAddNote?: boolean;
+    isAddMedia?: boolean;
   }> = [
-    { key: 'vault', id: 'vault', label: t.menuVault, icon: ShieldCheck },
     { key: 'add', id: 'add', label: t.navAdd, icon: Plus },
-    { key: 'email', id: 'email', label: t.navEmail, icon: Mail },
     { key: 'add-email', id: 'email', label: t.menuAddEmail, icon: MailPlus, isAddEmail: true },
-    { key: 'verify', id: 'verify', label: t.navVerify, icon: StickyNote },
-    { key: 'security', id: 'security', label: t.navSecurity, icon: UserCheck },
+    { key: 'add-note', id: 'verify', label: t.menuAddNote, icon: FilePlus, isAddNote: true },
+    { key: 'add-media', id: 'security', label: t.menuAddMedia, icon: ImagePlus, isAddMedia: true },
   ];
 
   return (
@@ -562,9 +549,9 @@ export default function App() {
             <div className="h-16 px-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 shrink-0">
               <div className="flex items-center gap-3">
                 <img
-                  src={BRAND_PHOTO_URL}
+                  src={APP_LOGO_URL}
                   alt="KIRON - XP"
-                  className="w-8 h-8 rounded-lg object-cover border border-emerald-500/40 shrink-0"
+                  className="w-8 h-8 rounded-lg object-cover shrink-0"
                 />
                 <span className="text-base font-bold tracking-tight whitespace-nowrap">
                   KIRON - XP
@@ -584,7 +571,8 @@ export default function App() {
             <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1.5" aria-label="Primary Navigation">
               {dropdownItems.map((item) => {
                 const Icon = item.icon;
-                const active = !item.isAddEmail && activeTab === item.id;
+                const active =
+                  !item.isAddEmail && !item.isAddNote && !item.isAddMedia && activeTab === item.id;
                 return (
                   <button
                     key={item.key}
@@ -594,6 +582,18 @@ export default function App() {
                       setActiveTab(item.id);
                       if (item.isAddEmail) {
                         setEmailAddNonce((n) => n + 1);
+                      } else {
+                        setEmailAddNonce(0);
+                      }
+                      if (item.isAddNote) {
+                        setNoteAddNonce((n) => n + 1);
+                      } else {
+                        setNoteAddNonce(0);
+                      }
+                      if (item.isAddMedia) {
+                        setMediaAddNonce((n) => n + 1);
+                      } else {
+                        setMediaAddNonce(0);
                       }
                       setDrawerOpen(false);
                     }}
@@ -682,14 +682,42 @@ export default function App() {
 
           <div className="flex items-center gap-2.5 min-w-0">
             <img
-              src={BRAND_PHOTO_URL}
+              src={APP_LOGO_URL}
               alt="KIRON - XP"
-              className="w-8 h-8 rounded-lg object-cover border border-emerald-500/40 shrink-0"
+              className="w-8 h-8 rounded-xl object-cover object-center shrink-0"
             />
             <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap">
               KIRON - XP
             </span>
           </div>
+
+          <nav className="hidden md:flex items-center gap-1.5 ml-auto" aria-label="Desktop Navigation">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const active = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    if (item.id !== 'add') setEditingAccount(null);
+                    setEmailAddNonce(0);
+                    setNoteAddNonce(0);
+                    setMediaAddNonce(0);
+                    setActiveTab(item.id);
+                  }}
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+                    active
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </header>
 
         {/* Main Viewport */}
@@ -738,21 +766,20 @@ export default function App() {
             <NotesDiaryView
               t={t}
               notes={vault.notes ?? []}
-              sheets={vault.sheets ?? []}
+              openAddNonce={noteAddNonce}
               onCreateNote={handleCreateNote}
               onUpdateNote={handleUpdateNote}
               onDeleteNote={handleDeleteNote}
-              onCreateSheet={handleCreateSheet}
-              onUpdateSheet={handleUpdateSheet}
-              onDeleteSheet={handleDeleteSheet}
             />
           )}
 
           {activeTab === 'security' && (
             <SecurityBackupView
               t={t}
-              recoveryCodes={vault.recoveryCodes}
-              onRegenerateRecoveryCodes={handleRegenerateRecoveryCodes}
+              profileMedia={vault.profileMedia ?? []}
+              openAddNonce={mediaAddNonce}
+              onAddProfileMedia={handleAddProfileMedia}
+              onDeleteProfileMedia={handleDeleteProfileMedia}
             />
           )}
         </main>
@@ -772,6 +799,9 @@ export default function App() {
               type="button"
               onClick={() => {
                 if (item.id !== 'add') setEditingAccount(null);
+                setEmailAddNonce(0);
+                setNoteAddNonce(0);
+                setMediaAddNonce(0);
                 setActiveTab(item.id);
               }}
               className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${

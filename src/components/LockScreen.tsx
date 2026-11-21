@@ -3,7 +3,7 @@ import { Eye, EyeOff, Globe, Lock, Moon, ShieldAlert, Sun } from 'lucide-react';
 import { Translations } from '../lib/i18n';
 import { Language, ThemeMode } from '../types';
 
-const BRAND_PHOTO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000009a148208932f6c5646168244_7b1691f5.png`;
+const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
 
 interface LockScreenProps {
   t: Translations;
@@ -54,9 +54,9 @@ export function LockScreen({
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2.5">
           <img
-            src={BRAND_PHOTO_URL}
+            src={APP_LOGO_URL}
             alt="KIRON - XP"
-            className="w-9 h-9 rounded-lg object-cover border border-emerald-500/40 shrink-0"
+            className="w-9 h-9 rounded-xl object-cover object-center shrink-0"
           />
           <span className="text-lg font-bold tracking-tight">
             {isSiteGate ? 'KIRON - XP' : t.appName}
@@ -86,12 +86,14 @@ export function LockScreen({
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8">
           {isSiteGate ? (
-            <div className="flex justify-center mb-5">
-              <img
-                src={BRAND_PHOTO_URL}
-                alt="KIRON - XP"
-                className="w-28 h-28 rounded-2xl object-cover border-2 border-emerald-500/40 shadow-sm"
-              />
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-28 h-28 rounded-3xl overflow-hidden flex items-center justify-center shadow-md ring-1 ring-slate-200/80 dark:ring-slate-700/80">
+                <img
+                  src={APP_LOGO_URL}
+                  alt="KIRON - XP"
+                  className="w-full h-full object-cover object-center block"
+                />
+              </div>
             </div>
           ) : (
             <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/70 text-emerald-700 dark:text-emerald-400 flex items-center justify-center mb-5">
@@ -108,9 +110,11 @@ export function LockScreen({
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                {isSiteGate ? t.siteEnterPassPlaceholder : t.enterPassphrase}
-              </label>
+              {!isSiteGate && (
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  {t.enterPassphrase}
+                </label>
+              )}
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -119,9 +123,10 @@ export function LockScreen({
                     setPassphrase(e.target.value);
                     if (error) setError('');
                   }}
+                  autoComplete="off"
                   autoFocus
                   className="w-full px-3.5 py-2.5 pr-10 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
-                  placeholder="••••••••"
+                  placeholder={isSiteGate ? '' : '••••••••'}
                 />
                 <button
                   type="button"
@@ -187,10 +192,6 @@ export function LockScreen({
           )}
         </div>
       </div>
-
-      <footer className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
-        <strong>KIRON - XP</strong> · 2FA Authenticator, Email, Notes &amp; Sheets Vault
-      </footer>
     </div>
   );
 }

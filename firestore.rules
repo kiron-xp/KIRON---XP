@@ -34,7 +34,7 @@ service cloud.firestore {
         ])
         && data.id == accountId
         && data.issuer is string && data.issuer.size() >= 1 && data.issuer.size() <= 120
-        && data.accountName is string && data.accountName.size() >= 1 && data.accountName.size() <= 200
+        && data.accountName is string && data.accountName.size() <= 200
         && isValidOptionalString(data, 'category', 60)
         && isValidOptionalString(data, 'caption', 300)
         && data.secret is string && data.secret.size() >= 8 && data.secret.size() <= 256
@@ -93,6 +93,37 @@ service cloud.firestore {
         && data.code is string && data.code.size() >= 4 && data.code.size() <= 64
         && data.used is bool
         && (!('usedAt' in data) || (data.usedAt is number && data.usedAt > 0));
+    }
+
+    function isValidProfileMedia(data, mediaId) {
+      return data.keys().hasAll([
+          'id', 'kind', 'title', 'mimeType', 'chunkCount', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'kind', 'title', 'numberValue', 'note', 'mimeType',
+          'fileName', 'fileSize', 'dataUrl', 'chunkCount', 'createdAt', 'updatedAt'
+        ])
+        && data.id == mediaId
+        && data.kind in ['photo', 'screenshot', 'video', 'number']
+        && data.title is string && data.title.size() <= 160
+        && isValidOptionalString(data, 'numberValue', 120)
+        && isValidOptionalString(data, 'note', 500)
+        && data.mimeType is string && data.mimeType.size() <= 100
+        && isValidOptionalString(data, 'fileName', 200)
+        && (!('fileSize' in data) || (data.fileSize is number && data.fileSize >= 0 && data.fileSize <= 50000000))
+        && isValidOptionalString(data, 'dataUrl', 750000)
+        && data.chunkCount is number && data.chunkCount >= 0 && data.chunkCount <= 80
+        && data.createdAt is number && data.createdAt > 0
+        && data.updatedAt is number && data.updatedAt >= data.createdAt;
+    }
+
+    function isValidProfileMediaChunk(data, mediaId, chunkId) {
+      return data.keys().hasAll(['id', 'mediaId', 'index', 'data'])
+        && data.keys().hasOnly(['id', 'mediaId', 'index', 'data'])
+        && data.id == chunkId
+        && data.mediaId == mediaId
+        && data.index is number && data.index >= 0 && data.index < 80
+        && data.data is string && data.data.size() >= 1 && data.data.size() <= 780000;
     }
 
     // Connection validation probe doc
@@ -171,6 +202,31 @@ service cloud.firestore {
         && incoming().id == existing().id
         && incoming().diff(existing()).affectedKeys().hasOnly(['used', 'usedAt']);
       allow delete: if isValidId(codeId);
+    }
+
+    // Shared PROFILE Gallery & Media (HD/4K Photos, KIRON, Videos, Numbers)
+    match /profileMedia/{mediaId} {
+      allow get: if isValidId(mediaId);
+      allow list: if resource.data.createdAt > 0;
+      allow create: if isValidId(mediaId) && isValidProfileMedia(incoming(), mediaId);
+      allow update: if isValidId(mediaId)
+        && isValidProfileMedia(incoming(), mediaId)
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'numberValue', 'note', 'updatedAt'
+        ]);
+      allow delete: if isValidId(mediaId);
+
+      match /chunks/{chunkId} {
+        allow get: if isValidId(mediaId) && isValidId(chunkId);
+        allow list: if isValidId(mediaId) && resource.data.index >= 0;
+        allow create: if isValidId(mediaId)
+          && isValidId(chunkId)
+          && isValidProfileMediaChunk(incoming(), mediaId, chunkId)
+          && exists(/databases/$(database)/documents/profileMedia/$(mediaId));
+        allow delete: if isValidId(mediaId) && isValidId(chunkId);
+      }
     }
   }
 }

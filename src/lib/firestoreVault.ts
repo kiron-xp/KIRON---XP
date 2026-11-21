@@ -15,6 +15,8 @@ import {
   EmailEntry,
   NoteColor,
   NoteEntry,
+  ProfileMediaEntry,
+  ProfileMediaKind,
   RecoveryCode,
   SheetEntry,
   VaultData,
@@ -26,9 +28,17 @@ const EMAILS_PATH = 'emails';
 const NOTES_PATH = 'notes';
 const SHEETS_PATH = 'sheets';
 const RECOVERY_PATH = 'recoveryCodes';
+const PROFILE_MEDIA_PATH = 'profileMedia';
 const MIGRATION_FLAG_KEY = 'kiron_firestore_migrated_v1';
 
 const VALID_COLORS: NoteColor[] = ['default', 'emerald', 'amber', 'sky', 'rose', 'violet'];
+const VALID_MEDIA_KINDS: ProfileMediaKind[] = ['photo', 'screenshot', 'video', 'number'];
+const CHUNK_CHAR_SIZE = 720000;
+const INLINE_MEDIA_MAX_CHARS = 680000;
+export const MAX_MEDIA_CHUNKS = 80;
+export const MAX_MEDIA_FILE_BYTES = 40 * 1024 * 1024;
+export const MAX_VIDEO_CHUNKS = MAX_MEDIA_CHUNKS;
+export const MAX_VIDEO_FILE_BYTES = MAX_MEDIA_FILE_BYTES;
 
 export function sanitizeDocId(raw: string): string {
   const cleaned = raw.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
@@ -38,7 +48,8 @@ export function sanitizeDocId(raw: string): string {
 function cleanAccountPayload(acc: AccountEntry): Record<string, unknown> {
   const id = sanitizeDocId(acc.id);
   const issuer = String(acc.issuer || 'Account').trim().slice(0, 120) || 'Account';
-  const accountName = String(acc.accountName || 'User').trim().slice(0, 200) || 'User';
+  const rawAccountName = String(acc.accountName ?? '').trim().slice(0, 200);
+  const accountName = rawAccountName.toLowerCase() === 'user' ? '' : rawAccountName;
   const secret = String(acc.secret || 'JBSWY3DPEHPK3PXP').trim().slice(0, 256);
   const type = acc.type === 'hotp' ? 'hotp' : 'totp';
   const algorithm =
@@ -328,6 +339,175 @@ export async function replaceRecoveryCodesInFirestore(
   }
 }
 
+function cleanProfileMediaPayload(
+  entry: ProfileMediaEntry,
+  inlineDataUrl: string,
+  chunkCount: number
+): Record<string, unknown> {
+  const id = sanitizeDocId(entry.id);
+  const kind: ProfileMediaKind = VALID_MEDIA_KINDS.includes(entry.kind) ? entry.kind : 'photo';
+  const createdAt =
+    typeof entry.createdAt === 'number' && entry.createdAt > 0 ? entry.createdAt : Date.now();
+  const updatedAt =
+    typeof entry.updatedAt === 'number' && entry.updatedAt >= createdAt
+      ? entry.updatedAt
+      : createdAt;
+
+  const payload: Record<string, unknown> = {
+    id,
+    kind,
+    title: String(entry.title ?? '').trim().slice(0, 160),
+    mimeType: String(entry.mimeType ?? 'application/octet-stream').slice(0, 100),
+    chunkCount: Math.max(0, Math.min(MAX_MEDIA_CHUNKS, Math.floor(chunkCount))),
+    createdAt,
+    updatedAt,
+  };
+
+  if (typeof entry.numberValue === 'string' && entry.numberValue.trim().length > 0) {
+    payload.numberValue = entry.numberValue.trim().slice(0, 120);
+  }
+  if (typeof entry.note === 'string' && entry.note.trim().length > 0) {
+    payload.note = entry.note.trim().slice(0, 500);
+  }
+  if (typeof entry.fileName === 'string' && entry.fileName.trim().length > 0) {
+    payload.fileName = entry.fileName.trim().slice(0, 200);
+  }
+  if (
+    typeof entry.fileSize === 'number' &&
+    Number.isFinite(entry.fileSize) &&
+    entry.fileSize >= 0
+  ) {
+    payload.fileSize = Math.min(50000000, Math.floor(entry.fileSize));
+  }
+  if (inlineDataUrl.length > 0 && inlineDataUrl.length <= 750000) {
+    payload.dataUrl = inlineDataUrl;
+  }
+
+  return payload;
+}
+
+export async function saveProfileMediaDoc(
+  entry: ProfileMediaEntry,
+  onProgress?: (pct: number) => void
+): Promise<ProfileMediaEntry> {
+  const docId = sanitizeDocId(entry.id);
+  const path = `${PROFILE_MEDIA_PATH}/${docId}`;
+  const rawData = entry.dataUrl ?? '';
+
+  try {
+    if (rawData.length <= INLINE_MEDIA_MAX_CHARS) {
+      const payload = cleanProfileMediaPayload({ ...entry, id: docId }, rawData, 0);
+      await setDoc(doc(db, PROFILE_MEDIA_PATH, docId), payload);
+      onProgress?.(100);
+      return { ...entry, id: docId, chunkCount: 0, dataUrl: rawData || undefined };
+    }
+
+    const totalChunks = Math.ceil(rawData.length / CHUNK_CHAR_SIZE);
+    if (totalChunks > MAX_VIDEO_CHUNKS) {
+      throw new Error('VIDEO_TOO_LARGE');
+    }
+
+    const parentPayload = cleanProfileMediaPayload({ ...entry, id: docId }, '', totalChunks);
+    await setDoc(doc(db, PROFILE_MEDIA_PATH, docId), parentPayload);
+    onProgress?.(10);
+
+    for (let start = 0; start < totalChunks; start += 4) {
+      const batchEnd = Math.min(totalChunks, start + 4);
+      const writes: Promise<void>[] = [];
+      for (let i = start; i < batchEnd; i += 1) {
+        const slice = rawData.slice(i * CHUNK_CHAR_SIZE, (i + 1) * CHUNK_CHAR_SIZE);
+        const chunkId = `chunk-${i}`;
+        writes.push(
+          setDoc(doc(db, PROFILE_MEDIA_PATH, docId, 'chunks', chunkId), {
+            id: chunkId,
+            mediaId: docId,
+            index: i,
+            data: slice,
+          })
+        );
+      }
+      await Promise.all(writes);
+      onProgress?.(Math.min(100, Math.round(10 + (batchEnd / totalChunks) * 90)));
+    }
+
+    return { ...entry, id: docId, chunkCount: totalChunks, dataUrl: undefined };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'VIDEO_TOO_LARGE') {
+      throw error;
+    }
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+function dataUrlToBlob(dataUrl: string, fallbackMime: string): Blob {
+  const commaIdx = dataUrl.indexOf(',');
+  if (commaIdx === -1) {
+    return new Blob([], { type: fallbackMime });
+  }
+  const header = dataUrl.slice(0, commaIdx);
+  const base64 = dataUrl.slice(commaIdx + 1);
+  const mimeMatch = header.match(/data:([^;]+);/i);
+  const mime = mimeMatch ? mimeMatch[1] : fallbackMime;
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
+export async function loadProfileMediaObjectUrl(entry: ProfileMediaEntry): Promise<string> {
+  const docId = sanitizeDocId(entry.id);
+  let fullDataUrl = entry.dataUrl ?? '';
+
+  if (!fullDataUrl && entry.chunkCount > 0) {
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, PROFILE_MEDIA_PATH, docId, 'chunks'),
+          where('index', '>=', 0),
+          orderBy('index', 'asc')
+        )
+      );
+      const parts = snap.docs
+        .map((d) => d.data() as { index: number; data: string })
+        .sort((a, b) => a.index - b.index)
+        .map((c) => c.data);
+      fullDataUrl = parts.join('');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, `${PROFILE_MEDIA_PATH}/${docId}/chunks`);
+    }
+  }
+
+  if (!fullDataUrl) {
+    throw new Error('MEDIA_EMPTY');
+  }
+
+  const blob = dataUrlToBlob(fullDataUrl, entry.mimeType || 'application/octet-stream');
+  return URL.createObjectURL(blob);
+}
+
+export const loadProfileMediaVideoObjectUrl = loadProfileMediaObjectUrl;
+
+export async function deleteProfileMediaDoc(id: string): Promise<void> {
+  const docId = sanitizeDocId(id);
+  const path = `${PROFILE_MEDIA_PATH}/${docId}`;
+  try {
+    const chunkSnap = await getDocs(
+      query(collection(db, PROFILE_MEDIA_PATH, docId, 'chunks'), where('index', '>=', 0))
+    );
+    if (!chunkSnap.empty) {
+      await Promise.all(
+        chunkSnap.docs.map((c) => deleteDoc(doc(db, PROFILE_MEDIA_PATH, docId, 'chunks', c.id)))
+      );
+    }
+    await deleteDoc(doc(db, PROFILE_MEDIA_PATH, docId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
 export async function migrateLocalDataToFirestoreOnce(localVault: VaultData): Promise<void> {
   try {
     if (localStorage.getItem(MIGRATION_FLAG_KEY) === '1') return;
@@ -398,13 +578,19 @@ export interface SharedVaultCallbacks {
   onNotes: (notes: NoteEntry[]) => void;
   onSheets: (sheets: SheetEntry[]) => void;
   onRecoveryCodes: (codes: RecoveryCode[]) => void;
+  onProfileMedia?: (items: ProfileMediaEntry[]) => void;
 }
 
 export function subscribeToSharedVault(callbacks: SharedVaultCallbacks): Unsubscribe {
   const unsubAccounts = onSnapshot(
     query(collection(db, ACCOUNTS_PATH), where('createdAt', '>', 0), orderBy('createdAt', 'desc')),
     (snapshot) => {
-      const list = snapshot.docs.map((d) => d.data() as AccountEntry);
+      const list = snapshot.docs.map((d) => {
+        const data = d.data() as AccountEntry;
+        return data.accountName?.trim().toLowerCase() === 'user'
+          ? { ...data, accountName: '' }
+          : data;
+      });
       callbacks.onAccounts(list);
     },
     (error) => {
@@ -460,11 +646,29 @@ export function subscribeToSharedVault(callbacks: SharedVaultCallbacks): Unsubsc
     }
   );
 
+  const unsubProfileMedia = onSnapshot(
+    query(
+      collection(db, PROFILE_MEDIA_PATH),
+      where('createdAt', '>', 0),
+      orderBy('createdAt', 'desc')
+    ),
+    (snapshot) => {
+      if (callbacks.onProfileMedia) {
+        const list = snapshot.docs.map((d) => d.data() as ProfileMediaEntry);
+        callbacks.onProfileMedia(list);
+      }
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.LIST, PROFILE_MEDIA_PATH);
+    }
+  );
+
   return () => {
     unsubAccounts();
     unsubEmails();
     unsubNotes();
     unsubSheets();
     unsubRecovery();
+    unsubProfileMedia();
   };
 }

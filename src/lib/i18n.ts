@@ -8,7 +8,9 @@ export interface Translations {
   navEmail: string;
   menuAddEmail: string;
   navVerify: string;
+  menuAddNote: string;
   navSecurity: string;
+  menuAddMedia: string;
   lockVault: string;
   unlockVault: string;
   vaultLockedTitle: string;
@@ -268,17 +270,56 @@ export interface Translations {
   exportSuccessToast: string;
   importSuccessToast: string;
   importErrorToast: string;
+
+  // Profile Gallery & Media Vault
+  mediaVaultTitle: string;
+  mediaVaultDesc: string;
+  mediaUploadPhotoBtn: string;
+  mediaUploadScreenshotBtn: string;
+  mediaUploadVideoBtn: string;
+  mediaAddNumberBtn: string;
+  mediaFilterAll: string;
+  mediaFilterPhoto: string;
+  mediaFilterScreenshot: string;
+  mediaFilterVideo: string;
+  mediaFilterNumber: string;
+  mediaSearchPlaceholder: string;
+  mediaNumberLabel: string;
+  mediaNumberPlaceholder: string;
+  mediaTitleLabel: string;
+  mediaTitlePlaceholder: string;
+  mediaNoteLabel: string;
+  mediaNotePlaceholder: string;
+  mediaSaveNumberBtn: string;
+  mediaUploadingLabel: string;
+  mediaSavedToast: string;
+  mediaVideoTooLarge: string;
+  mediaEmptyTitle: string;
+  mediaEmptyDesc: string;
+  mediaNoMatch: string;
+  mediaDeleteConfirm: string;
+  mediaPlayVideoBtn: string;
+  mediaLoadingVideo: string;
+  mediaDownloadBtn: string;
+  mediaNumberRequired: string;
+  mediaUploadTitleLabel: string;
+  mediaUploadTitlePlaceholder: string;
+  mediaUploadCaptionLabel: string;
+  mediaUploadCaptionPlaceholder: string;
+  mediaConfirmUploadBtn: string;
 }
 
 const bn: Translations = {
-  appName: 'প্রহরী ২এফএ',
+  appName: 'KIRON - XP',
   navVault: 'KIRON - XP',
   menuVault: 'KIRON - XP',
   navAdd: 'XP - 1',
   navEmail: 'EMAIL',
   menuAddEmail: 'XP - 2',
   navVerify: 'KIRON',
+  menuAddNote: 'XP - 3',
   navSecurity: 'PROFILE',
+  menuAddMedia: 'XP - 4',
   lockVault: 'ভল্ট লক করুন',
   unlockVault: 'ভল্ট আনলক করুন',
   vaultLockedTitle: 'প্রহরী ভল্ট লক করা আছে',
@@ -295,8 +336,8 @@ const bn: Translations = {
   languageLabel: 'ভাষা',
   vaultEncryptedStatus: 'AES-256-GCM এনক্রিপ্টেড',
   vaultUnencryptedStatus: 'লোকাল স্টোরেজ (লকবিহীন)',
-  siteLockTitle: 'KIRON - XP প্রবেশ',
-  siteLockDesc: 'ওয়েবসাইটে প্রবেশ করতে পাসওয়ার্ড দিন।',
+  siteLockTitle: 'INFINITY - KIRON - XP',
+  siteLockDesc: 'ENTER YOUR PASSWORD TO ACCESS THE WEBSITE',
   siteEnterPassPlaceholder: 'পাসওয়ার্ড লিখুন',
   siteWrongPass: 'পাসওয়ার্ড সঠিক নয়। আবার চেষ্টা করুন।',
   siteUnlockBtn: 'প্রবেশ করুন',
@@ -341,7 +382,7 @@ const bn: Translations = {
   galleryIconLabel: 'গ্যালারি থেকে ছবি / লোগো অ্যাড করুন (ঐচ্ছিক)',
   uploadIconBtn: 'গ্যালারি থেকে ছবি বাছাই',
   removeIconBtn: 'ছবি সরান',
-  secretKeyLabel: 'Base32 সিক্রেট কী',
+  secretKeyLabel: '2FA KEY',
   secretKeyPlaceholder: 'যেমন: JBSWY3DPEHPK3PXP',
   generateRandomKey: 'র্যান্ডম কী তৈরি করুন',
   otpTypeLabel: 'OTP ধরন',
@@ -403,7 +444,7 @@ const bn: Translations = {
   noteUnpinAction: 'আনপিন করুন',
   noteColorLabel: 'রঙ',
   noteEmptyTitle: 'আপনার ডায়রি ও নোট খালি',
-  noteEmptyDesc: 'উপরের "নোট বা ডায়রি লিখুন..." বক্সে ক্লিক করে Keep Notes-এর মতো রঙিন ও পিন করা নোট সংরক্ষণ করুন।',
+  noteEmptyDesc: 'বাম পাশের মেনু (☰) থেকে XP - 3 নির্বাচন করে নতুন নোট বা ডায়রি তৈরি করুন।',
   noteNoMatch: 'খোঁজার সাথে মিলে এমন কোনো নোট পাওয়া যায়নি।',
   noteSavedToast: 'নোট সংরক্ষিত হয়েছে।',
   noteDeleteConfirm: 'নোটটি মুছে ফেলবেন?',
@@ -531,17 +572,55 @@ const bn: Translations = {
   exportSuccessToast: 'ব্যাকআপ সফলভাবে তৈরি হয়েছে।',
   importSuccessToast: 'অ্যাকাউন্ট সফলভাবে ইম্পোর্ট হয়েছে।',
   importErrorToast: 'ফাইল বা পাসওয়ার্ড সঠিক নয় অথবা ফরম্যাট ত্রুটিপূর্ণ।',
+
+  mediaVaultTitle: 'গ্যালারি ও মিডিয়া সংরক্ষণ',
+  mediaVaultDesc: 'গ্যালারি থেকে ছবি, স্ক্রিনশট, ভিডিও এবং জরুরি নাম্বার আপলোড করে নিরাপদে সংরক্ষণ করুন।',
+  mediaUploadPhotoBtn: 'PHOTO',
+  mediaUploadScreenshotBtn: 'KIRON',
+  mediaUploadVideoBtn: 'VIDEO',
+  mediaAddNumberBtn: 'NUMBER',
+  mediaFilterAll: 'সব',
+  mediaFilterPhoto: 'PHOTO',
+  mediaFilterScreenshot: 'KIRON',
+  mediaFilterVideo: 'VIDEO',
+  mediaFilterNumber: 'NUMBER',
+  mediaSearchPlaceholder: 'নাম্বার, শিরোনাম বা ফাইলের নাম খুঁজুন...',
+  mediaNumberLabel: 'নাম্বার লিখুন',
+  mediaNumberPlaceholder: 'যেমন: +88017... বা যেকোনো নাম্বার/পিন',
+  mediaTitleLabel: 'শিরোনাম / নাম (ঐচ্ছিক)',
+  mediaTitlePlaceholder: 'যেমন: পার্সোনাল নম্বর, বিকাশ, ডকুমেন্ট',
+  mediaNoteLabel: 'ক্যাপশন / নোট (ঐচ্ছিক)',
+  mediaNotePlaceholder: 'অতিরিক্ত তথ্য লিখুন...',
+  mediaSaveNumberBtn: 'নাম্বার সংরক্ষণ করুন',
+  mediaUploadingLabel: 'আপলোড হচ্ছে...',
+  mediaSavedToast: 'সফলভাবে সংরক্ষিত হয়েছে।',
+  mediaVideoTooLarge: 'ফাইল সর্বোচ্চ ৪০ MB এর মধ্যে হতে হবে।',
+  mediaEmptyTitle: 'এই বিভাগে এখনো কিছু নেই',
+  mediaEmptyDesc: 'বাম পাশের মেনু (☰) থেকে XP - 4 চাপ দিয়ে ছবি, ভিডিও, কিরণ বা নাম্বার আপলোড করুন।',
+  mediaNoMatch: 'খোঁজার সাথে মিলে এমন কোনো আইটেম পাওয়া যায়নি।',
+  mediaDeleteConfirm: 'আইটেমটি মুছে ফেলবেন?',
+  mediaPlayVideoBtn: 'ভিডিও চালু করুন',
+  mediaLoadingVideo: 'ভিডিও লোড হচ্ছে...',
+  mediaDownloadBtn: 'ডাউনলোড',
+  mediaNumberRequired: 'অনুগ্রহ করে একটি নাম্বার লিখুন।',
+  mediaUploadTitleLabel: 'টাইটেল / শিরোনাম (ঐচ্ছিক)',
+  mediaUploadTitlePlaceholder: 'টাইটেল লিখুন...',
+  mediaUploadCaptionLabel: 'ক্যাপশন (ঐচ্ছিক)',
+  mediaUploadCaptionPlaceholder: 'ছবি বা ভিডিও সম্পর্কে ক্যাপশন লিখুন...',
+  mediaConfirmUploadBtn: 'আপলোড ও সংরক্ষণ করুন',
 };
 
 const en: Translations = {
-  appName: 'Prohori 2FA',
+  appName: 'KIRON - XP',
   navVault: 'KIRON - XP',
   menuVault: 'KIRON - XP',
   navAdd: 'XP - 1',
   navEmail: 'EMAIL',
   menuAddEmail: 'XP - 2',
   navVerify: 'KIRON',
+  menuAddNote: 'XP - 3',
   navSecurity: 'PROFILE',
+  menuAddMedia: 'XP - 4',
   lockVault: 'Lock Vault',
   unlockVault: 'Unlock Vault',
   vaultLockedTitle: 'Prohori Vault is Locked',
@@ -558,8 +637,8 @@ const en: Translations = {
   languageLabel: 'Language',
   vaultEncryptedStatus: 'AES-256-GCM Encrypted',
   vaultUnencryptedStatus: 'Local Storage (Unlocked)',
-  siteLockTitle: 'Enter KIRON - XP',
-  siteLockDesc: 'Please enter the access password to continue.',
+  siteLockTitle: 'INFINITY - KIRON - XP',
+  siteLockDesc: 'ENTER YOUR PASSWORD TO ACCESS THE WEBSITE',
   siteEnterPassPlaceholder: 'Enter password',
   siteWrongPass: 'Incorrect password. Please try again.',
   siteUnlockBtn: 'Enter',
@@ -604,7 +683,7 @@ const en: Translations = {
   galleryIconLabel: 'Add Image from Gallery (Optional)',
   uploadIconBtn: 'Choose Image',
   removeIconBtn: 'Remove',
-  secretKeyLabel: 'Base32 Secret Key',
+  secretKeyLabel: '2FA KEY',
   secretKeyPlaceholder: 'e.g. JBSWY3DPEHPK3PXP',
   generateRandomKey: 'Generate Random Key',
   otpTypeLabel: 'OTP Type',
@@ -666,7 +745,7 @@ const en: Translations = {
   noteUnpinAction: 'Unpin note',
   noteColorLabel: 'Color',
   noteEmptyTitle: 'Your diary & notes are empty',
-  noteEmptyDesc: 'Click "Take a note..." above to create Keep-style color-coded and pinned diary notes.',
+  noteEmptyDesc: 'Open the menu (☰) and select XP - 3 to create a new diary note.',
   noteNoMatch: 'No notes match your search.',
   noteSavedToast: 'Note saved.',
   noteDeleteConfirm: 'Delete this note?',
@@ -794,6 +873,42 @@ const en: Translations = {
   exportSuccessToast: 'Backup exported successfully.',
   importSuccessToast: 'Accounts imported successfully.',
   importErrorToast: 'Decryption failed: wrong password or invalid backup file.',
+
+  mediaVaultTitle: 'Gallery & Media Vault',
+  mediaVaultDesc: 'Upload and store photos, screenshots, videos, and important numbers from your gallery.',
+  mediaUploadPhotoBtn: 'PHOTO',
+  mediaUploadScreenshotBtn: 'KIRON',
+  mediaUploadVideoBtn: 'VIDEO',
+  mediaAddNumberBtn: 'NUMBER',
+  mediaFilterAll: 'All',
+  mediaFilterPhoto: 'PHOTO',
+  mediaFilterScreenshot: 'KIRON',
+  mediaFilterVideo: 'VIDEO',
+  mediaFilterNumber: 'NUMBER',
+  mediaSearchPlaceholder: 'Search numbers, titles, or filenames...',
+  mediaNumberLabel: 'Number',
+  mediaNumberPlaceholder: 'e.g. +88017... or account/PIN number',
+  mediaTitleLabel: 'Title / Label (optional)',
+  mediaTitlePlaceholder: 'e.g. Personal Phone, Document',
+  mediaNoteLabel: 'Caption / Note (optional)',
+  mediaNotePlaceholder: 'Optional note...',
+  mediaSaveNumberBtn: 'Save Number',
+  mediaUploadingLabel: 'Uploading...',
+  mediaSavedToast: 'Saved successfully.',
+  mediaVideoTooLarge: 'File size must be 40 MB or less.',
+  mediaEmptyTitle: 'No items in this section yet',
+  mediaEmptyDesc: 'Open the menu (☰) and select XP - 4 to upload PHOTO, VIDEO, KIRON, or NUMBER.',
+  mediaNoMatch: 'No matching items found.',
+  mediaDeleteConfirm: 'Delete this item?',
+  mediaPlayVideoBtn: 'Play Video',
+  mediaLoadingVideo: 'Loading video...',
+  mediaDownloadBtn: 'Download',
+  mediaNumberRequired: 'Please enter a number.',
+  mediaUploadTitleLabel: 'Title (optional)',
+  mediaUploadTitlePlaceholder: 'Enter title...',
+  mediaUploadCaptionLabel: 'Caption (optional)',
+  mediaUploadCaptionPlaceholder: 'Write a caption for this photo or video...',
+  mediaConfirmUploadBtn: 'Upload & Save',
 };
 
 export function getTranslations(lang: Language): Translations {
