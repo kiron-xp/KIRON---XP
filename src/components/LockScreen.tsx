@@ -177,21 +177,21 @@ export function LockScreen({
       </div>
 
       <div
-        className={`relative z-10 flex-1 flex items-center justify-center min-h-0 ${
-          isSiteGate ? 'px-5 pb-24 sm:pb-28' : 'p-6'
+        className={`relative z-10 flex-1 flex justify-center min-h-0 ${
+          isSiteGate ? 'items-start px-5 pt-2 sm:pt-6' : 'items-center p-6'
         }`}
       >
         <div
           className={`w-full ${
             isSiteGate
-              ? 'max-w-sm bg-transparent px-4 py-2 text-center'
+              ? 'max-w-sm bg-transparent px-4 py-1 text-center'
               : 'max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8'
           }`}
         >
           {isSiteGate ? (
             showCenterLogo && (
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-3xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
+              <div className="flex items-center justify-center mb-3">
+                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-3xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
                   <img
                     src={APP_LOGO_URL}
                     alt={headerBrand}
@@ -220,7 +220,7 @@ export function LockScreen({
 
           {(!isSiteGate || gateDesc.trim().length > 0) && (
             <p
-              className={`mt-1.5 text-xs sm:text-sm leading-relaxed ${
+              className={`mt-1 text-xs sm:text-sm leading-relaxed ${
                 isSiteGate
                   ? 'text-white/95 text-center drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
                   : 'text-slate-600 dark:text-slate-400'
@@ -230,7 +230,7 @@ export function LockScreen({
             </p>
           )}
 
-          <form onSubmit={handleSubmit} className={isSiteGate ? 'mt-4 space-y-3' : 'mt-6 space-y-4'}>
+          <form onSubmit={handleSubmit} className={isSiteGate ? 'mt-3 space-y-2.5' : 'mt-6 space-y-4'}>
             <div>
               {!isSiteGate && (
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
