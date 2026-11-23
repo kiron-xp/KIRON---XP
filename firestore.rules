@@ -137,6 +137,7 @@ service cloud.firestore {
           'wechatUrl', 'facebookUrl', 'imoUrl', 'messengerUrl',
           'whatsappUrl2', 'telegramUrl2',
           'showSocialLinks', 'showLogo', 'overlayOpacity', 'wallpaperDataUrl',
+          'insideWallpaperDataUrl', 'insideOverlayOpacity',
           'entryPasswordHash', 'updatedAt'
         ])
         && data.id == configId
@@ -159,6 +160,8 @@ service cloud.firestore {
         && data.showLogo is bool
         && data.overlayOpacity is number && data.overlayOpacity >= 0 && data.overlayOpacity <= 80
         && isValidOptionalString(data, 'wallpaperDataUrl', 750000)
+        && isValidOptionalString(data, 'insideWallpaperDataUrl', 750000)
+        && (!('insideOverlayOpacity' in data) || (data.insideOverlayOpacity is number && data.insideOverlayOpacity >= 0 && data.insideOverlayOpacity <= 80))
         && isValidOptionalString(data, 'entryPasswordHash', 128)
         && data.updatedAt is number && data.updatedAt > 0;
     }
@@ -280,6 +283,7 @@ service cloud.firestore {
           'wechatUrl', 'facebookUrl', 'imoUrl', 'messengerUrl',
           'whatsappUrl2', 'telegramUrl2',
           'showSocialLinks', 'showLogo', 'overlayOpacity', 'wallpaperDataUrl',
+          'insideWallpaperDataUrl', 'insideOverlayOpacity',
           'entryPasswordHash', 'updatedAt'
         ]);
     }

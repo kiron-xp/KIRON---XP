@@ -371,6 +371,13 @@
           "type": "string",
           "maxLength": 750000
         },
+        "insideWallpaperDataUrl": {
+          "type": "string",
+          "maxLength": 750000
+        },
+        "insideOverlayOpacity": {
+          "type": "number"
+        },
         "entryPasswordHash": {
           "type": "string",
           "maxLength": 128

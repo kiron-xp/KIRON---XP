@@ -418,10 +418,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
               return (
                 <div key={app.id}>
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    <span
-                      className={`relative w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${app.badgeClass}`}
-                    >
-                      <SocialAppLogoSvg id={app.id} className="w-3.5 h-3.5" />
+                    <span className="relative w-5 h-5 rounded-md overflow-hidden flex items-center justify-center shrink-0 shadow-xs ring-1 ring-black/10">
+                      <SocialAppLogoSvg id={app.id} className="w-full h-full block" />
                     </span>
                     <span>{app.settingsLabel}</span>
                   </label>

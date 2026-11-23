@@ -56,6 +56,8 @@ export const DEFAULT_SITE_ENTRY_CONFIG: SiteEntryConfig = {
   showLogo: true,
   overlayOpacity: 25,
   wallpaperDataUrl: undefined,
+  insideWallpaperDataUrl: undefined,
+  insideOverlayOpacity: 35,
   entryPasswordHash: undefined,
   updatedAt: 0,
 };
@@ -795,6 +797,19 @@ function cleanSiteEntryConfigPayload(config: SiteEntryConfig): Record<string, un
   ) {
     payload.wallpaperDataUrl = config.wallpaperDataUrl;
   }
+  if (
+    typeof config.insideWallpaperDataUrl === 'string' &&
+    config.insideWallpaperDataUrl.length > 0 &&
+    config.insideWallpaperDataUrl.length <= 750000
+  ) {
+    payload.insideWallpaperDataUrl = config.insideWallpaperDataUrl;
+  }
+  if (
+    typeof config.insideOverlayOpacity === 'number' &&
+    Number.isFinite(config.insideOverlayOpacity)
+  ) {
+    payload.insideOverlayOpacity = Math.max(0, Math.min(80, Math.round(config.insideOverlayOpacity)));
+  }
   if (typeof config.entryPasswordHash === 'string' && config.entryPasswordHash.length > 0) {
     payload.entryPasswordHash = config.entryPasswordHash.slice(0, 128);
   }
@@ -826,6 +841,10 @@ export async function saveSiteEntryConfig(config: SiteEntryConfig): Promise<Site
     showLogo: Boolean(payload.showLogo),
     overlayOpacity: Number(payload.overlayOpacity),
     wallpaperDataUrl: typeof payload.wallpaperDataUrl === 'string' ? payload.wallpaperDataUrl : undefined,
+    insideWallpaperDataUrl:
+      typeof payload.insideWallpaperDataUrl === 'string' ? payload.insideWallpaperDataUrl : undefined,
+    insideOverlayOpacity:
+      typeof payload.insideOverlayOpacity === 'number' ? payload.insideOverlayOpacity : 35,
     entryPasswordHash:
       typeof payload.entryPasswordHash === 'string' ? payload.entryPasswordHash : undefined,
     updatedAt: Number(payload.updatedAt),

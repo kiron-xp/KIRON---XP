@@ -135,6 +135,8 @@ export interface SiteEntryConfig {
   showLogo: boolean;
   overlayOpacity: number;
   wallpaperDataUrl?: string;
+  insideWallpaperDataUrl?: string;
+  insideOverlayOpacity?: number;
   entryPasswordHash?: string;
   updatedAt: number;
 }

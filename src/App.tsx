@@ -5,12 +5,14 @@ import {
   FilePlus,
   Globe,
   ImagePlus,
+  Loader2,
   Lock,
   Mail,
   MailPlus,
   Menu,
   Moon,
   Plus,
+  RotateCcw,
   ShieldCheck,
   SlidersHorizontal,
   StickyNote,
@@ -43,6 +45,7 @@ import {
 } from './lib/firestoreVault';
 import { getTranslations } from './lib/i18n';
 import {
+  compressImageForVault,
   createInitialVault,
   ensureMainProfileSeeded,
   loadLanguagePreference,
@@ -69,6 +72,33 @@ import {
 } from './types';
 
 const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
+const DEFAULT_WALLPAPER_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_0000000063188246b2dc4e77b1130652_ad6f1a5e.webp`;
+
+const INSIDE_OVERLAY_CLASS_MAP: Record<number, string> = {
+  0: 'bg-black/0',
+  10: 'bg-black/10',
+  20: 'bg-black/20',
+  30: 'bg-black/30',
+  35: 'bg-black/35',
+  45: 'bg-black/45',
+  60: 'bg-black/60',
+  75: 'bg-black/75',
+};
+
+function getInsideOverlayClass(opacity?: number): string {
+  const steps = [0, 10, 20, 30, 35, 45, 60, 75];
+  const val = typeof opacity === 'number' && Number.isFinite(opacity) ? opacity : 30;
+  let closest = 30;
+  let minDiff = Infinity;
+  for (const step of steps) {
+    const diff = Math.abs(step - val);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = step;
+    }
+  }
+  return INSIDE_OVERLAY_CLASS_MAP[closest] ?? 'bg-black/30';
+}
 
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();
@@ -108,6 +138,9 @@ export default function App() {
   const [editingAccount, setEditingAccount] = useState<AccountEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sadiyaModalOpen, setSadiyaModalOpen] = useState(false);
+  const [savingInsideWallpaper, setSavingInsideWallpaper] = useState(false);
+  const sadiyaFileInputRef = useRef<HTMLInputElement>(null);
   const [siteConfig, setSiteConfig] = useState<SiteEntryConfig>(() => loadCachedSiteEntryConfig());
   const [activeProfile, setActiveProfile] = useState<{ name: string; password: string } | null>(null);
   const vaultRef = useRef<VaultData>(vault);
@@ -190,6 +223,7 @@ export default function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setDrawerOpen(false);
+        setSadiyaModalOpen(false);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -497,6 +531,66 @@ export default function App() {
     setSiteConfig(saved);
   };
 
+  const handleInsideWallpaperPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setSavingInsideWallpaper(true);
+    try {
+      const compressed = await compressImageForVault(file, 1600, 680000);
+      await handleSaveSiteConfig({
+        ...siteConfig,
+        insideWallpaperDataUrl: compressed,
+        updatedAt: Date.now(),
+      });
+      showToast(
+        lang === 'bn'
+          ? 'ভিতরের ওয়েলপেপার পরিবর্তন ও সেভ হয়েছে।'
+          : 'Website wallpaper updated and saved.'
+      );
+      setSadiyaModalOpen(false);
+    } catch {
+      showToast(t.importErrorToast);
+    } finally {
+      setSavingInsideWallpaper(false);
+    }
+  };
+
+  const handleInsideOverlayStep = async (step: number) => {
+    setSavingInsideWallpaper(true);
+    try {
+      await handleSaveSiteConfig({
+        ...siteConfig,
+        insideOverlayOpacity: step,
+        updatedAt: Date.now(),
+      });
+    } catch {
+      showToast(t.importErrorToast);
+    } finally {
+      setSavingInsideWallpaper(false);
+    }
+  };
+
+  const handleResetInsideWallpaper = async () => {
+    setSavingInsideWallpaper(true);
+    try {
+      await handleSaveSiteConfig({
+        ...siteConfig,
+        insideWallpaperDataUrl: undefined,
+        updatedAt: Date.now(),
+      });
+      showToast(
+        lang === 'bn'
+          ? 'লক স্ক্রিনের ওয়েলপেপারে ফেরত নেওয়া হয়েছে।'
+          : 'Restored lock screen wallpaper.'
+      );
+    } catch {
+      showToast(t.importErrorToast);
+    } finally {
+      setSavingInsideWallpaper(false);
+    }
+  };
+
   if (!siteUnlocked) {
     return (
       <LockScreen
@@ -549,8 +643,23 @@ export default function App() {
     { key: 'site-settings', id: 'site-settings', label: t.menuSiteSettings, icon: SlidersHorizontal },
   ];
 
+  const insideWallpaperSrc =
+    siteConfig.insideWallpaperDataUrl || siteConfig.wallpaperDataUrl || DEFAULT_WALLPAPER_URL;
+  const insideOverlayClass = getInsideOverlayClass(siteConfig.insideOverlayOpacity);
+
   return (
-    <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen flex relative bg-slate-950 text-slate-900 dark:text-slate-100">
+      {/* Fullscreen Wallpaper inside unlocked website (matching Lock Screen) */}
+      <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
+        <img
+          src={insideWallpaperSrc}
+          alt=""
+          aria-hidden="true"
+          className="w-full h-full object-cover object-center"
+        />
+        <div className={`absolute inset-0 ${insideOverlayClass}`} />
+      </div>
+
       {/* Full-Height Left Vertical Drawer (triggered by Hamburger Menu ☰) */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex">
@@ -688,15 +797,15 @@ export default function App() {
       )}
 
       {/* Main Column */}
-      <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        {/* Top Bar: Hamburger Menu (☰) and KIRON - XP name only */}
-        <header className="h-16 px-4 sm:px-8 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 sticky top-0 z-30">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
+        {/* Top Bar: Hamburger Menu (☰), KIRON - XP, Desktop Nav, and SADIYA wallpaper switcher on far right */}
+        <header className="h-16 px-4 sm:px-8 border-b border-slate-200/70 dark:border-white/15 bg-white/80 dark:bg-slate-900/75 backdrop-blur-md flex items-center gap-3 sticky top-0 z-30">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-expanded={drawerOpen}
             aria-label="Menu"
-            className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shrink-0"
+            className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-950/90 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors shrink-0"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -712,7 +821,7 @@ export default function App() {
             </span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-1.5 ml-auto" aria-label="Desktop Navigation">
+          <nav className="hidden md:flex items-center gap-1.5 mx-auto" aria-label="Desktop Navigation">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = activeTab === item.id;
@@ -729,8 +838,8 @@ export default function App() {
                   }}
                   className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
                     active
-                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -739,6 +848,18 @@ export default function App() {
               );
             })}
           </nav>
+
+          {/* SADIYA name aligned straight to the right across from KIRON - XP — touch to change inside wallpaper */}
+          <button
+            type="button"
+            onClick={() => setSadiyaModalOpen(true)}
+            aria-label="SADIYA Wallpaper"
+            title={lang === 'bn' ? 'ওয়ালপেপার পরিবর্তন করুন' : 'Change Website Wallpaper'}
+            className="ml-auto md:ml-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200/80 dark:border-white/15 bg-slate-50/80 dark:bg-slate-800/70 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-sm font-bold tracking-wide text-slate-900 dark:text-white transition-colors shrink-0 cursor-pointer"
+          >
+            <ImagePlus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>SADIYA</span>
+          </button>
         </header>
 
         {/* Main Viewport */}
@@ -816,7 +937,7 @@ export default function App() {
 
       {/* Mobile Bottom Navigation (Compact < 15% viewport height) */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 h-14 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 grid grid-cols-4"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 h-14 bg-white/85 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/70 dark:border-white/15 grid grid-cols-4"
         aria-label="Mobile Navigation"
       >
         {navItems.map((item) => {
@@ -836,7 +957,7 @@ export default function App() {
               className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
                 active
                   ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-slate-500 dark:text-slate-400'
+                  : 'text-slate-600 dark:text-slate-300'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -845,6 +966,124 @@ export default function App() {
           );
         })}
       </nav>
+
+      {/* SADIYA — Inside Website Wallpaper Modal */}
+      {sadiyaModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs"
+          onClick={() => setSadiyaModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <ImagePlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    {lang === 'bn' ? 'SADIYA — ওয়েবসাইট ওয়ালপেপার' : 'SADIYA — Website Wallpaper'}
+                  </h2>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {lang === 'bn'
+                      ? 'গ্যালারি থেকে ওয়েবসাইটের ভিতরের ওয়ালপেপার পরিবর্তন করুন।'
+                      : 'Choose a wallpaper photo from your gallery for inside the site.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSadiyaModalOpen(false)}
+                aria-label={t.close}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="w-24 h-36 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black shrink-0 shadow-sm">
+                <img
+                  src={insideWallpaperSrc}
+                  alt="Inside Wallpaper Preview"
+                  className="w-full h-full object-cover object-center"
+                />
+              </div>
+
+              <div className="flex-1 space-y-2.5">
+                <input
+                  ref={sadiyaFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleInsideWallpaperPick}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  disabled={savingInsideWallpaper}
+                  onClick={() => sadiyaFileInputRef.current?.click()}
+                  className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  {savingInsideWallpaper ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-4 h-4" />
+                  )}
+                  <span>
+                    {lang === 'bn' ? 'গ্যালারি থেকে ওয়ালপেপার দিন' : 'Pick Wallpaper from Gallery'}
+                  </span>
+                </button>
+
+                {siteConfig.insideWallpaperDataUrl && (
+                  <button
+                    type="button"
+                    disabled={savingInsideWallpaper}
+                    onClick={handleResetInsideWallpaper}
+                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>
+                      {lang === 'bn' ? 'লক স্ক্রিনের ওয়ালপেপারে ফিরুন' : 'Match Lock Screen Wallpaper'}
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {lang === 'bn'
+                  ? `ওয়ালপেপার ডার্কনেস (${siteConfig.insideOverlayOpacity ?? 30}%)`
+                  : `Wallpaper Dimming (${siteConfig.insideOverlayOpacity ?? 30}%)`}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {[0, 10, 20, 30, 35, 45, 60, 75].map((step) => {
+                  const currentStep = siteConfig.insideOverlayOpacity ?? 30;
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      disabled={savingInsideWallpaper}
+                      onClick={() => handleInsideOverlayStep(step)}
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                        currentStep === step
+                          ? 'bg-emerald-600 text-white'
+                          : 'border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {step}%
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Non-intrusive Toast Notification */}
       {toast && (
