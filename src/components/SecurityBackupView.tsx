@@ -16,12 +16,14 @@ import {
   X,
 } from 'lucide-react';
 import {
+  cacheProfileMediaObjectUrl,
+  getCachedProfileMediaObjectUrl,
   loadProfileMediaObjectUrl,
   MAX_MEDIA_FILE_BYTES,
   sanitizeDocId,
 } from '../lib/firestoreVault';
 import { Translations } from '../lib/i18n';
-import { fileToBase64DataUrl } from '../lib/storage';
+import { compressImageForVault, fileToBase64DataUrl } from '../lib/storage';
 import { ProfileMediaEntry, ProfileMediaKind } from '../types';
 
 interface SecurityBackupViewProps {
@@ -116,11 +118,6 @@ export function SecurityBackupView({
 
   useEffect(() => {
     return () => {
-      Object.values(mediaUrlsRef.current).forEach((url) => {
-        if (url.startsWith('blob:')) {
-          URL.revokeObjectURL(url);
-        }
-      });
       if (pendingPreviewRef.current && pendingPreviewRef.current.startsWith('blob:')) {
         URL.revokeObjectURL(pendingPreviewRef.current);
       }
@@ -154,16 +151,20 @@ export function SecurityBackupView({
     return list.sort((a, b) => b.createdAt - a.createdAt);
   }, [profileMedia, filterKind]);
 
-  // Auto-load chunked HD/4K photos (PHOTO & KIRON) so original resolution displays immediately
+  // Auto-load chunked photos & videos in active category (with persistent module blob cache)
   useEffect(() => {
-    const targets = categoryItems.filter(
-      (item) =>
-        (item.kind === 'photo' || item.kind === 'screenshot') &&
-        !item.dataUrl &&
-        item.chunkCount > 0 &&
-        !mediaUrlsRef.current[item.id] &&
-        !loadingMediaIdsRef.current[item.id]
-    );
+    const targets = categoryItems.filter((item) => {
+      if (item.kind === 'number' || item.dataUrl || item.chunkCount <= 0) return false;
+      const existing = mediaUrlsRef.current[item.id] || getCachedProfileMediaObjectUrl(item.id);
+      if (existing) {
+        if (!mediaUrlsRef.current[item.id]) {
+          mediaUrlsRef.current[item.id] = existing;
+          setMediaUrls((prev) => ({ ...prev, [item.id]: existing }));
+        }
+        return false;
+      }
+      return !loadingMediaIdsRef.current[item.id];
+    });
     if (targets.length === 0) return;
 
     let cancelled = false;
@@ -178,8 +179,6 @@ export function SecurityBackupView({
           if (!cancelled) {
             mediaUrlsRef.current[item.id] = url;
             setMediaUrls((prev) => ({ ...prev, [item.id]: url }));
-          } else {
-            URL.revokeObjectURL(url);
           }
         } catch {
           // ignore fetch error for individual item
@@ -237,13 +236,28 @@ export function SecurityBackupView({
 
     setUploadError('');
     setUploading(true);
-    setUploadProgress(5);
+    setUploadProgress(8);
 
     try {
-      for (let i = 0; i < files.length; i += 1) {
-        const file = files[i];
-        // Preserve exact original HD/4K file bytes without resizing or compression
-        const rawDataUrl = await fileToBase64DataUrl(file);
+      const progressByFile = new Array<number>(files.length).fill(0);
+      const updateAggregateProgress = () => {
+        const total = progressByFile.reduce((sum, p) => sum + p, 0);
+        setUploadProgress(Math.max(8, Math.min(100, Math.round(total / files.length))));
+      };
+
+      const uploadSingleFile = async (file: File, i: number) => {
+        let rawDataUrl: string;
+        if (kind !== 'video' && file.size > 460000) {
+          try {
+            // Fast HD optimization (~2048px WebP) so photos save in a single instant Firestore write
+            rawDataUrl = await compressImageForVault(file, 2048, 680000);
+          } catch {
+            rawDataUrl = await fileToBase64DataUrl(file);
+          }
+        } else {
+          rawDataUrl = await fileToBase64DataUrl(file);
+        }
+
         const now = Date.now() + i;
         const id = sanitizeDocId(
           crypto.randomUUID ? crypto.randomUUID() : `${kind}-${now}-${i}`
@@ -270,18 +284,26 @@ export function SecurityBackupView({
           updatedAt: now,
         };
 
-        await onAddProfileMedia(entry, (pct) => {
-          const base = Math.round((i / files.length) * 100);
-          const span = Math.round(pct / files.length);
-          setUploadProgress(Math.min(100, base + span));
-        });
-
-        // Keep instant sharp local preview URL for chunked photos
-        if (kind !== 'video' && rawDataUrl.length > 680000) {
+        // Immediately cache local object URL so large photos & videos display/play with zero delay
+        if (rawDataUrl.length > 680000) {
           const objUrl = URL.createObjectURL(file);
+          cacheProfileMediaObjectUrl(id, objUrl);
           mediaUrlsRef.current[id] = objUrl;
           setMediaUrls((prev) => ({ ...prev, [id]: objUrl }));
         }
+
+        await onAddProfileMedia(entry, (pct) => {
+          progressByFile[i] = pct;
+          updateAggregateProgress();
+        });
+        progressByFile[i] = 100;
+        updateAggregateProgress();
+      };
+
+      // Upload up to 3 files concurrently for rapid multi-file adds
+      for (let start = 0; start < files.length; start += 3) {
+        const batch = files.slice(start, start + 3);
+        await Promise.all(batch.map((file, offset) => uploadSingleFile(file, start + offset)));
       }
 
       clearPendingUpload();
@@ -390,8 +412,10 @@ export function SecurityBackupView({
     return t.mediaFilterNumber;
   };
 
-  const lightboxImageSrc = lightboxItem
-    ? lightboxItem.dataUrl || mediaUrls[lightboxItem.id]
+  const lightboxMediaSrc = lightboxItem
+    ? lightboxItem.dataUrl ||
+      mediaUrls[lightboxItem.id] ||
+      getCachedProfileMediaObjectUrl(lightboxItem.id)
     : undefined;
 
   return (
@@ -703,7 +727,8 @@ export function SecurityBackupView({
             {categoryItems.map((item) => {
               const isConfirming = confirmDeleteId === item.id;
               const isCopied = copiedMediaId === item.id;
-              const resolvedSrc = item.dataUrl || mediaUrls[item.id];
+              const resolvedSrc =
+                item.dataUrl || mediaUrls[item.id] || getCachedProfileMediaObjectUrl(item.id);
               const isLoadingMedia = Boolean(loadingMediaIds[item.id]);
 
               return (
@@ -711,23 +736,23 @@ export function SecurityBackupView({
                   key={item.id}
                   className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 overflow-hidden flex flex-col justify-between"
                 >
-                  {/* PHOTO & KIRON Visual Preview (Full Original HD/4K Quality) */}
+                  {/* PHOTO & KIRON Visual Preview (Full uncropped photo on display) */}
                   {(item.kind === 'photo' || item.kind === 'screenshot') && (
                     <div
                       onClick={() => {
                         if (resolvedSrc) setLightboxItem(item);
                       }}
-                      className="relative aspect-video bg-slate-200 dark:bg-slate-900 cursor-pointer group overflow-hidden flex items-center justify-center"
+                      className="relative min-h-[160px] bg-slate-950/90 cursor-pointer group overflow-hidden flex items-center justify-center"
                     >
                       {resolvedSrc ? (
                         <img
                           src={resolvedSrc}
                           alt={item.title || item.kind}
                           loading="lazy"
-                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                          className="w-full h-auto max-h-[560px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.01]"
                         />
                       ) : (
-                        <div className="flex items-center justify-center w-full h-full text-slate-400">
+                        <div className="flex items-center justify-center w-full h-44 text-slate-400">
                           <Loader2 className={`w-5 h-5 ${isLoadingMedia ? 'animate-spin' : ''}`} />
                         </div>
                       )}
@@ -742,17 +767,16 @@ export function SecurityBackupView({
                     </div>
                   )}
 
-                  {/* VIDEO Player (Full Original HD/4K Quality) */}
+                  {/* VIDEO Player (Full uncropped video on display + fullscreen lightbox) */}
                   {item.kind === 'video' && (
-                    <div className="relative aspect-video bg-slate-950 flex items-center justify-center">
+                    <div className="relative bg-black flex items-center justify-center min-h-[180px] group">
                       {resolvedSrc ? (
                         <video
                           src={resolvedSrc}
                           controls
-                          autoPlay={Boolean(mediaUrls[item.id])}
                           playsInline
                           preload="metadata"
-                          className="w-full h-full object-contain bg-black"
+                          className="w-full h-auto max-h-[560px] object-contain bg-black"
                         />
                       ) : (
                         <button
@@ -761,13 +785,27 @@ export function SecurityBackupView({
                           disabled={isLoadingMedia}
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
                         >
-                          <Play className="w-4 h-4" />
+                          {isLoadingMedia ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
                           <span>{isLoadingMedia ? t.mediaLoadingVideo : t.mediaPlayVideoBtn}</span>
                         </button>
                       )}
                       <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-950/75 text-white text-[10px] font-semibold pointer-events-none">
                         {getKindBadgeLabel(item.kind)}
                       </span>
+                      {resolvedSrc && (
+                        <button
+                          type="button"
+                          onClick={() => setLightboxItem(item)}
+                          aria-label="Fullscreen video"
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-950/75 hover:bg-slate-900 text-white opacity-90 hover:opacity-100 transition-opacity"
+                        >
+                          <Maximize2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   )}
 
@@ -904,10 +942,10 @@ export function SecurityBackupView({
         )}
       </section>
 
-      {/* Fullscreen Lightbox Modal for HD / 4K Photos & KIRON */}
-      {lightboxItem && lightboxImageSrc && (
+      {/* Fullscreen Lightbox Modal for Full Photo & Full Video */}
+      {lightboxItem && lightboxMediaSrc && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/92 backdrop-blur-xs"
           onClick={() => setLightboxItem(null)}
           role="dialog"
           aria-modal="true"
@@ -946,12 +984,22 @@ export function SecurityBackupView({
                 </button>
               </div>
             </div>
-            <div className="p-2 bg-slate-100 dark:bg-slate-950 flex items-center justify-center max-h-[84vh] overflow-auto">
-              <img
-                src={lightboxImageSrc}
-                alt={lightboxItem.title}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
-              />
+            <div className="p-2 bg-black flex items-center justify-center max-h-[85vh] overflow-auto">
+              {lightboxItem.kind === 'video' ? (
+                <video
+                  src={lightboxMediaSrc}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-w-full max-h-[82vh] w-full object-contain rounded-lg bg-black"
+                />
+              ) : (
+                <img
+                  src={lightboxMediaSrc}
+                  alt={lightboxItem.title}
+                  className="max-w-full max-h-[82vh] w-auto h-auto object-contain rounded-lg"
+                />
+              )}
             </div>
           </div>
         </div>

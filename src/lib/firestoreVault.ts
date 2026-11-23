@@ -85,12 +85,27 @@ function cacheSiteEntryConfig(config: SiteEntryConfig): void {
 
 const VALID_COLORS: NoteColor[] = ['default', 'emerald', 'amber', 'sky', 'rose', 'violet'];
 const VALID_MEDIA_KINDS: ProfileMediaKind[] = ['photo', 'screenshot', 'video', 'number'];
-const CHUNK_CHAR_SIZE = 720000;
+const CHUNK_CHAR_SIZE = 760000;
 const INLINE_MEDIA_MAX_CHARS = 680000;
 export const MAX_MEDIA_CHUNKS = 80;
 export const MAX_MEDIA_FILE_BYTES = 40 * 1024 * 1024;
 export const MAX_VIDEO_CHUNKS = MAX_MEDIA_CHUNKS;
 export const MAX_VIDEO_FILE_BYTES = MAX_MEDIA_FILE_BYTES;
+
+const mediaObjectUrlCache = new Map<string, string>();
+
+export function getCachedProfileMediaObjectUrl(id: string): string | undefined {
+  return mediaObjectUrlCache.get(sanitizeDocId(id));
+}
+
+export function cacheProfileMediaObjectUrl(id: string, objectUrl: string): void {
+  const docId = sanitizeDocId(id);
+  const existing = mediaObjectUrlCache.get(docId);
+  if (existing && existing !== objectUrl && existing.startsWith('blob:')) {
+    URL.revokeObjectURL(existing);
+  }
+  mediaObjectUrlCache.set(docId, objectUrl);
+}
 
 export function sanitizeDocId(raw: string): string {
   const cleaned = raw.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 128);
@@ -463,8 +478,8 @@ export async function saveProfileMediaDoc(
     await setDoc(doc(db, PROFILE_MEDIA_PATH, docId), parentPayload);
     onProgress?.(10);
 
-    for (let start = 0; start < totalChunks; start += 4) {
-      const batchEnd = Math.min(totalChunks, start + 4);
+    for (let start = 0; start < totalChunks; start += 12) {
+      const batchEnd = Math.min(totalChunks, start + 12);
       const writes: Promise<void>[] = [];
       for (let i = start; i < batchEnd; i += 1) {
         const slice = rawData.slice(i * CHUNK_CHAR_SIZE, (i + 1) * CHUNK_CHAR_SIZE);
@@ -511,6 +526,11 @@ function dataUrlToBlob(dataUrl: string, fallbackMime: string): Blob {
 
 export async function loadProfileMediaObjectUrl(entry: ProfileMediaEntry): Promise<string> {
   const docId = sanitizeDocId(entry.id);
+  const cached = mediaObjectUrlCache.get(docId);
+  if (cached) {
+    return cached;
+  }
+
   let fullDataUrl = entry.dataUrl ?? '';
 
   if (!fullDataUrl && entry.chunkCount > 0) {
@@ -537,13 +557,20 @@ export async function loadProfileMediaObjectUrl(entry: ProfileMediaEntry): Promi
   }
 
   const blob = dataUrlToBlob(fullDataUrl, entry.mimeType || 'application/octet-stream');
-  return URL.createObjectURL(blob);
+  const objectUrl = URL.createObjectURL(blob);
+  mediaObjectUrlCache.set(docId, objectUrl);
+  return objectUrl;
 }
 
 export const loadProfileMediaVideoObjectUrl = loadProfileMediaObjectUrl;
 
 export async function deleteProfileMediaDoc(id: string): Promise<void> {
   const docId = sanitizeDocId(id);
+  const cached = mediaObjectUrlCache.get(docId);
+  if (cached && cached.startsWith('blob:')) {
+    URL.revokeObjectURL(cached);
+  }
+  mediaObjectUrlCache.delete(docId);
   const path = `${PROFILE_MEDIA_PATH}/${docId}`;
   try {
     const chunkSnap = await getDocs(
