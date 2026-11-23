@@ -337,19 +337,22 @@ export function LockScreen({
         </div>
       </div>
 
-      {/* Middle 2-Row Mobile App Grid (edge-to-edge 5 per row, glossy 3D candy-glass icons, set high) */}
+      {/* Middle 2-Row Mobile App Grid (tight 5x2 cluster, positioned slightly lower) */}
       {isSiteGate && (
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-4 sm:pt-7 px-3 sm:px-6 min-h-0">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-10 sm:pt-14 px-3 sm:px-6 min-h-0">
           {showSocials && (
-            <div className="w-full max-w-xl mx-auto space-y-4 sm:space-y-5">
+            <div className="w-full max-w-md mx-auto space-y-2.5 sm:space-y-3">
               {[SOCIAL_APPS.slice(0, 5), SOCIAL_APPS.slice(5, 10)].map((row, rowIdx) => (
-                <div key={rowIdx} className="flex items-start justify-between w-full gap-1.5">
+                <div
+                  key={rowIdx}
+                  className="flex items-start justify-center w-full gap-2 min-[390px]:gap-2.5 sm:gap-3"
+                >
                   {row.map((app) => {
                     const action = resolveSocialAppAction(app.id, siteConfig);
                     const iconEl = (
                       <>
                         <span
-                          className={`relative overflow-hidden w-13 h-13 min-[390px]:w-14 min-[390px]:h-14 sm:w-16 sm:h-16 rounded-[16px] sm:rounded-[18px] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.45),0_10px_22px_rgba(0,0,0,0.5)] ring-1 ring-white/45 transition-transform group-hover:scale-105 group-active:scale-95 ${app.badgeClass}`}
+                          className={`relative overflow-hidden w-13 h-13 min-[390px]:w-14 min-[390px]:h-14 sm:w-15 sm:h-15 rounded-[16px] sm:rounded-[18px] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.45),0_10px_22px_rgba(0,0,0,0.5)] ring-1 ring-white/45 transition-transform group-hover:scale-105 group-active:scale-95 ${app.badgeClass}`}
                         >
                           <span
                             aria-hidden="true"
@@ -365,7 +368,7 @@ export function LockScreen({
                           />
                           <SocialAppLogoSvg id={app.id} className="relative z-10 w-7 h-7 sm:w-8 sm:h-8" />
                         </span>
-                        <span className="mt-1.5 text-[10px] sm:text-[11px] font-medium text-white/95 tracking-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] truncate max-w-[62px] text-center">
+                        <span className="mt-1 text-[10px] sm:text-[11px] font-medium text-white/95 tracking-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] truncate w-full text-center">
                           {app.label}
                         </span>
                       </>
@@ -385,7 +388,7 @@ export function LockScreen({
                             });
                           }}
                           aria-label={app.settingsLabel}
-                          className="group flex flex-col items-center cursor-pointer focus:outline-none"
+                          className="group w-13 min-[390px]:w-14 sm:w-15 shrink-0 flex flex-col items-center cursor-pointer focus:outline-none"
                         >
                           {iconEl}
                         </button>
@@ -399,7 +402,7 @@ export function LockScreen({
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={app.settingsLabel}
-                        className="group flex flex-col items-center focus:outline-none"
+                        className="group w-13 min-[390px]:w-14 sm:w-15 shrink-0 flex flex-col items-center focus:outline-none"
                       >
                         {iconEl}
                       </a>
