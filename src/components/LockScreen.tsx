@@ -337,65 +337,76 @@ export function LockScreen({
         </div>
       </div>
 
-      {/* Middle 2-Row Mobile App Grid (5x2, larger icons, wider horizontal spread, set higher) */}
+      {/* Middle 2-Row Mobile App Grid (edge-to-edge 5 per row, glossy 3D candy-glass icons, set high) */}
       {isSiteGate && (
         <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-4 sm:pt-7 px-3 sm:px-6 min-h-0">
           {showSocials && (
-            <div className="w-full max-w-[400px] sm:max-w-[500px] grid grid-cols-5 gap-x-2 min-[380px]:gap-x-3.5 sm:gap-x-6 gap-y-3.5 sm:gap-y-4 justify-items-center">
-              {SOCIAL_APPS.map((app) => {
-                const action = resolveSocialAppAction(app.id, siteConfig);
-                const iconEl = (
-                  <>
-                    <span
-                      className={`relative w-12 h-12 min-[380px]:w-13 min-[380px]:h-13 sm:w-15 sm:h-15 rounded-2xl flex items-center justify-center shadow-[0_8px_18px_rgba(0,0,0,0.48)] ring-1 ring-white/30 transition-transform group-hover:scale-105 group-active:scale-95 ${app.badgeClass}`}
-                    >
-                      <SocialAppLogoSvg id={app.id} className="w-7 h-7 sm:w-8 sm:h-8" />
-                      {app.secondaryBadge && (
-                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-slate-900 text-[9px] font-extrabold flex items-center justify-center shadow">
-                          {app.secondaryBadge}
+            <div className="w-full max-w-xl mx-auto space-y-4 sm:space-y-5">
+              {[SOCIAL_APPS.slice(0, 5), SOCIAL_APPS.slice(5, 10)].map((row, rowIdx) => (
+                <div key={rowIdx} className="flex items-start justify-between w-full gap-1.5">
+                  {row.map((app) => {
+                    const action = resolveSocialAppAction(app.id, siteConfig);
+                    const iconEl = (
+                      <>
+                        <span
+                          className={`relative overflow-hidden w-13 h-13 min-[390px]:w-14 min-[390px]:h-14 sm:w-16 sm:h-16 rounded-[16px] sm:rounded-[18px] flex items-center justify-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.45),0_10px_22px_rgba(0,0,0,0.5)] ring-1 ring-white/45 transition-transform group-hover:scale-105 group-active:scale-95 ${app.badgeClass}`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -top-3 -left-3 w-9 h-9 rounded-full bg-white/30 blur-[1px]"
+                          />
+                          <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-x-1.5 top-1 h-2.5 rounded-full bg-gradient-to-b from-white/50 to-transparent"
+                          />
+                          <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -bottom-3 -right-3 w-9 h-9 rounded-full bg-white/15"
+                          />
+                          <SocialAppLogoSvg id={app.id} className="relative z-10 w-7 h-7 sm:w-8 sm:h-8" />
                         </span>
-                      )}
-                    </span>
-                    <span className="mt-1 text-[10px] sm:text-[11px] font-medium text-white/95 tracking-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] truncate max-w-[64px] text-center">
-                      {app.label}
-                    </span>
-                  </>
-                );
+                        <span className="mt-1.5 text-[10px] sm:text-[11px] font-medium text-white/95 tracking-tight drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] truncate max-w-[62px] text-center">
+                          {app.label}
+                        </span>
+                      </>
+                    );
 
-                if (action.type === 'modal') {
-                  return (
-                    <button
-                      key={app.id}
-                      type="button"
-                      onClick={() => {
-                        setCopiedPopup(false);
-                        setActiveSocialPopup({
-                          label: action.label,
-                          value: action.value,
-                          openHref: action.openHref,
-                        });
-                      }}
-                      aria-label={app.settingsLabel}
-                      className="group flex flex-col items-center cursor-pointer focus:outline-none"
-                    >
-                      {iconEl}
-                    </button>
-                  );
-                }
+                    if (action.type === 'modal') {
+                      return (
+                        <button
+                          key={app.id}
+                          type="button"
+                          onClick={() => {
+                            setCopiedPopup(false);
+                            setActiveSocialPopup({
+                              label: action.label,
+                              value: action.value,
+                              openHref: action.openHref,
+                            });
+                          }}
+                          aria-label={app.settingsLabel}
+                          className="group flex flex-col items-center cursor-pointer focus:outline-none"
+                        >
+                          {iconEl}
+                        </button>
+                      );
+                    }
 
-                return (
-                  <a
-                    key={app.id}
-                    href={action.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={app.settingsLabel}
-                    className="group flex flex-col items-center focus:outline-none"
-                  >
-                    {iconEl}
-                  </a>
-                );
-              })}
+                    return (
+                      <a
+                        key={app.id}
+                        href={action.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={app.settingsLabel}
+                        className="group flex flex-col items-center focus:outline-none"
+                      >
+                        {iconEl}
+                      </a>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           )}
 
