@@ -646,19 +646,28 @@ export default function App() {
   const insideWallpaperSrc =
     siteConfig.insideWallpaperDataUrl || siteConfig.wallpaperDataUrl || DEFAULT_WALLPAPER_URL;
   const insideOverlayClass = getInsideOverlayClass(siteConfig.insideOverlayOpacity);
+  const showInsideWallpaper = activeTab !== 'security' && activeTab !== 'verify';
 
   return (
-    <div className="min-h-screen flex relative bg-black text-white">
-      {/* Fullscreen Wallpaper inside unlocked website (top to bottom edge-to-edge) */}
-      <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
-        <img
-          src={insideWallpaperSrc}
-          alt=""
-          aria-hidden="true"
-          className="w-full h-full object-cover object-center"
-        />
-        <div className={`absolute inset-0 ${insideOverlayClass}`} />
-      </div>
+    <div
+      className={`min-h-screen flex relative transition-colors ${
+        showInsideWallpaper
+          ? 'bg-black text-white'
+          : 'bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100'
+      }`}
+    >
+      {/* Fullscreen Wallpaper inside unlocked website (hidden in PROFILE and KIRON Notes tabs) */}
+      {showInsideWallpaper && (
+        <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
+          <img
+            src={insideWallpaperSrc}
+            alt=""
+            aria-hidden="true"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className={`absolute inset-0 ${insideOverlayClass}`} />
+        </div>
+      )}
 
       {/* Full-Height Left Vertical Drawer (triggered by Hamburger Menu ☰) */}
       {drawerOpen && (
@@ -798,14 +807,24 @@ export default function App() {
 
       {/* Main Column */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        {/* Top Bar: Completely transparent over wallpaper matching Lock Screen */}
-        <header className="h-14 sm:h-16 px-4 sm:px-8 border-b border-transparent bg-transparent flex items-center gap-3 sticky top-0 z-30">
+        {/* Top Bar: Transparent over wallpaper tabs, crisp theme-aware bar on PROFILE & KIRON Notes */}
+        <header
+          className={`h-14 sm:h-16 px-4 sm:px-8 flex items-center gap-3 sticky top-0 z-30 transition-colors ${
+            showInsideWallpaper
+              ? 'border-b border-transparent bg-transparent'
+              : 'border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'
+          }`}
+        >
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-expanded={drawerOpen}
             aria-label="Menu"
-            className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-white/25 bg-black/25 backdrop-blur-xs hover:bg-black/45 text-white transition-colors shrink-0 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
+            className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border transition-colors shrink-0 ${
+              showInsideWallpaper
+                ? 'border-white/25 bg-black/25 backdrop-blur-xs hover:bg-black/45 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+            }`}
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -816,7 +835,13 @@ export default function App() {
               alt="KIRON - XP"
               className="w-8 h-8 rounded-xl object-cover object-center shrink-0 shadow-sm"
             />
-            <span className="text-base font-bold tracking-tight text-white whitespace-nowrap drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+            <span
+              className={`text-base font-bold tracking-tight whitespace-nowrap ${
+                showInsideWallpaper
+                  ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]'
+                  : 'text-slate-900 dark:text-slate-100'
+              }`}
+            >
               KIRON - XP
             </span>
           </div>
@@ -836,10 +861,16 @@ export default function App() {
                     setMediaAddNonce(0);
                     setActiveTab(item.id);
                   }}
-                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap drop-shadow-[0_1px_5px_rgba(0,0,0,0.95)] ${
-                    active
-                      ? 'bg-black/35 border border-white/30 text-emerald-300 backdrop-blur-xs'
-                      : 'text-white/85 hover:bg-black/25 hover:text-white'
+                  className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+                    showInsideWallpaper
+                      ? `drop-shadow-[0_1px_5px_rgba(0,0,0,0.95)] ${
+                          active
+                            ? 'bg-black/35 border border-white/30 text-emerald-300 backdrop-blur-xs'
+                            : 'text-white/85 hover:bg-black/25 hover:text-white'
+                        }`
+                      : active
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -855,9 +886,12 @@ export default function App() {
             onClick={() => setSadiyaModalOpen(true)}
             aria-label="SADIYA Wallpaper"
             title={lang === 'bn' ? 'ওয়ালপেপার পরিবর্তন করুন' : 'Change Website Wallpaper'}
-            className="ml-auto md:ml-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-transparent hover:bg-black/25 text-sm font-bold tracking-wide text-white transition-colors shrink-0 cursor-pointer drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]"
+            className={`ml-auto md:ml-0 inline-flex items-center px-2.5 py-1 rounded-lg bg-transparent text-sm font-bold tracking-wide transition-colors shrink-0 cursor-pointer ${
+              showInsideWallpaper
+                ? 'hover:bg-black/25 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]'
+                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100'
+            }`}
           >
-            <ImagePlus className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
             <span>SADIYA</span>
           </button>
         </header>
@@ -935,9 +969,13 @@ export default function App() {
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation (Blended transparently over wallpaper bottom-to-top) */}
+      {/* Mobile Bottom Navigation */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-30 h-14 bg-gradient-to-t from-black/55 via-black/25 to-transparent grid grid-cols-4"
+        className={`md:hidden fixed bottom-0 inset-x-0 z-30 h-14 grid grid-cols-4 transition-colors ${
+          showInsideWallpaper
+            ? 'bg-gradient-to-t from-black/55 via-black/25 to-transparent'
+            : 'border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'
+        }`}
         aria-label="Mobile Navigation"
       >
         {navItems.map((item) => {
@@ -954,8 +992,14 @@ export default function App() {
                 setMediaAddNonce(0);
                 setActiveTab(item.id);
               }}
-              className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] ${
-                active ? 'text-emerald-300' : 'text-white/85 hover:text-white'
+              className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors ${
+                showInsideWallpaper
+                  ? `drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] ${
+                      active ? 'text-emerald-300' : 'text-white/85 hover:text-white'
+                    }`
+                  : active
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               <Icon className="w-4 h-4" />
