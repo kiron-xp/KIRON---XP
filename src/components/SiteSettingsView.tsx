@@ -213,14 +213,14 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-start justify-between gap-3">
+    <div className="max-w-3xl mx-auto space-y-6 text-white">
+      <div className="flex items-start justify-between gap-3 drop-shadow-[0_1px_5px_rgba(0,0,0,0.95)]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2.5 text-slate-900 dark:text-slate-100">
-            <SlidersHorizontal className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2.5 text-white">
+            <SlidersHorizontal className="w-6 h-6 text-emerald-300 shrink-0" />
             <span>{isBn ? 'KIRON — প্রবেশ পথ ও সাইট সেটিংস' : 'KIRON — Entry Gate Settings'}</span>
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-xs sm:text-sm text-white/80">
             {isBn
               ? 'ওয়েবসাইটে ঢোকার পাসওয়ার্ড, বায়ো, টেলিগ্রাম, হোয়াটসঅ্যাপ, ওয়েলপেপার এবং সব লেখা এখান থেকে পরিবর্তন করুন।'
               : 'Customize entry password, bio, Telegram, WhatsApp, wallpaper, logo visibility, and entry screen texts.'}
@@ -231,17 +231,17 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
       {/* 1. Entry Password Change */}
       <form
         onSubmit={handleChangeEntryPassword}
-        className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-4 shadow-sm"
+        className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-md p-5 sm:p-6 space-y-4 shadow-xl"
       >
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/35 text-emerald-300 flex items-center justify-center shrink-0">
             <KeyRound className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-sm font-bold text-white">
               {isBn ? 'প্রবেশ পাসওয়ার্ড পরিবর্তন' : 'Change Entry Password'}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-white/70">
               {isBn
                 ? 'সাইটে ঢোকার পাসওয়ার্ড এখান থেকে বদলালে সবাই নতুন পাসওয়ার্ড দিয়ে ঢুকবে।'
                 : 'Updating the entry password applies across all visitors immediately.'}
@@ -251,7 +251,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-white/80 mb-1">
               {isBn ? 'বর্তমান পাসওয়ার্ড' : 'Current Password'}
             </label>
             <div className="relative">
@@ -264,12 +264,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 }}
                 autoComplete="off"
                 placeholder={isBn ? 'বর্তমান পাসওয়ার্ড' : 'Current password'}
-                className="w-full px-3 py-2 pr-9 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                className="w-full px-3 py-2 pr-9 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
               <button
                 type="button"
                 onClick={() => setShowCurrentPass((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/65 hover:text-white"
                 aria-label="Toggle current password"
               >
                 {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -278,7 +278,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-white/80 mb-1">
               {isBn ? 'নতুন পাসওয়ার্ড' : 'New Password'}
             </label>
             <div className="relative">
@@ -291,12 +291,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 }}
                 autoComplete="off"
                 placeholder={isBn ? 'নতুন পাসওয়ার্ড' : 'New password'}
-                className="w-full px-3 py-2 pr-9 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                className="w-full px-3 py-2 pr-9 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
               <button
                 type="button"
                 onClick={() => setShowNewPass((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/65 hover:text-white"
                 aria-label="Toggle new password"
               >
                 {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -305,7 +305,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-white/80 mb-1">
               {isBn ? 'পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm Password'}
             </label>
             <input
@@ -317,20 +317,20 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
               }}
               autoComplete="off"
               placeholder={isBn ? 'আবার লিখুন' : 'Repeat new password'}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
             />
           </div>
         </div>
 
         {passErr && (
-          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-950/60 border border-red-400/40 text-xs text-red-200">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <span>{passErr}</span>
           </div>
         )}
 
         {passMsg && (
-          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-700 dark:text-emerald-300">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-400/40 text-xs text-emerald-200">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{passMsg}</span>
           </div>
@@ -340,7 +340,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           <button
             type="submit"
             disabled={savingPass}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold transition-colors"
           >
             <KeyRound className="w-3.5 h-3.5" />
             <span>{savingPass ? '...' : isBn ? 'পাসওয়ার্ড আপডেট করুন' : 'Update Entry Password'}</span>
@@ -348,19 +348,19 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
         </div>
       </form>
 
-      {/* 2. Bio, Telegram/WhatsApp, Texts, Logo & Wallpaper */}
+      {/* 2. Bio, Social App Links, Texts, Logo & Wallpaper */}
       <form onSubmit={handleSaveEntrySettings} className="space-y-6">
         {/* Bio & Social Links */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-4 shadow-sm">
+        <div className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-md p-5 sm:p-6 space-y-4 shadow-xl">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800/70 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-400/35 text-sky-300 flex items-center justify-center shrink-0">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-sm font-bold text-white">
                 {isBn ? 'বায়ো এবং ১০টি অ্যাপ লিংক / আইডি' : 'Entry Bio & Social App Links'}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-white/70">
                 {isBn
                   ? '২টি WhatsApp, ২টি Telegram, TikTok, Instagram, WeChat, Facebook, imo এবং Messenger এর আইডি/নম্বর যোগ করুন।'
                   : 'Add your numbers, IDs, or links for all 10 apps shown in the 5×2 launcher.'}
@@ -370,10 +370,10 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-medium text-white/80">
                 {isBn ? 'বায়ো (নিচে দেখাবে)' : 'Bio Text (Bottom)'}
               </label>
-              <span className="text-[11px] text-slate-400">{bio.length}/300</span>
+              <span className="text-[11px] text-white/60">{bio.length}/300</span>
             </div>
             <textarea
               rows={3}
@@ -385,7 +385,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                   ? 'আপনার সম্পর্কে বা সাইটের বায়ো এখানে লিখুন...'
                   : 'Write a short bio displayed at the bottom of the entry page...'
               }
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+              className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
             />
           </div>
 
@@ -417,8 +417,8 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
               };
               return (
                 <div key={app.id}>
-                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    <span className="relative w-5 h-5 rounded-md overflow-hidden flex items-center justify-center shrink-0 shadow-xs ring-1 ring-black/10">
+                  <label className="flex items-center gap-2 text-xs font-medium text-white/85 mb-1">
+                    <span className="relative w-5 h-5 rounded-md overflow-hidden flex items-center justify-center shrink-0 shadow-xs ring-1 ring-white/25">
                       <SocialAppLogoSvg id={app.id} className="w-full h-full block" />
                     </span>
                     <span>{app.settingsLabel}</span>
@@ -428,7 +428,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                     value={valueMap[app.configKey]}
                     onChange={(e) => setterMap[app.configKey](e.target.value)}
                     placeholder={isBn ? app.placeholderBn : app.placeholderEn}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
                   />
                 </div>
               );
@@ -440,9 +440,9 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
               type="checkbox"
               checked={showSocialLinks}
               onChange={(e) => setShowSocialLinks(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+              className="w-4 h-4 rounded border-white/30 text-emerald-500 focus:ring-emerald-500"
             />
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-medium text-white/85">
               {isBn
                 ? 'প্রবেশ পেজে ৫×২ লাইনে ১০টি অ্যাপ লোগো দেখান'
                 : 'Show all 10 app icons in a 5×2 grid on the entry page'}
@@ -451,16 +451,16 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
         </div>
 
         {/* Texts & Logo */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-4 shadow-sm">
+        <div className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-md p-5 sm:p-6 space-y-4 shadow-xl">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/70 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/35 text-amber-300 flex items-center justify-center shrink-0">
               <Type className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h2 className="text-sm font-bold text-white">
                 {isBn ? 'প্রবেশ পেজের সব লেখা ও লোগো' : 'Entry Texts & Center Logo'}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-white/70">
                 {isBn
                   ? 'শিরোনাম, উপ-শিরোনাম, বাটনের লেখা এবং মাঝখানের খরগোশ লোগো নিয়ন্ত্রণ করুন।'
                   : 'Edit titles, prompt subtitle, unlock button label, and center logo visibility.'}
@@ -470,7 +470,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-white/80 mb-1">
                 {isBn ? 'উপরের ব্র্যান্ড নাম' : 'Top Header Brand'}
               </label>
               <input
@@ -478,12 +478,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 maxLength={80}
                 value={headerTitle}
                 onChange={(e) => setHeaderTitle(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-white/80 mb-1">
                 {isBn ? 'মূল শিরোনাম' : 'Main Title'}
               </label>
               <input
@@ -491,12 +491,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 maxLength={120}
                 value={lockTitle}
                 onChange={(e) => setLockTitle(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-white/80 mb-1">
                 {isBn ? 'উপ-শিরোনাম' : 'Subtitle Text'}
               </label>
               <input
@@ -504,12 +504,12 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 maxLength={240}
                 value={lockDesc}
                 onChange={(e) => setLockDesc(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-white/80 mb-1">
                 {isBn ? 'প্রবেশ লেখার টেক্সট' : 'Unlock Button Text'}
               </label>
               <input
@@ -518,7 +518,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 value={unlockBtnText}
                 onChange={(e) => setUnlockBtnText(e.target.value)}
                 placeholder={isBn ? 'প্রবেশ করুন' : 'Enter'}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
             </div>
           </div>
@@ -528,26 +528,26 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
               type="checkbox"
               checked={showLogo}
               onChange={(e) => setShowLogo(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-600"
+              className="w-4 h-4 rounded border-white/30 text-emerald-500 focus:ring-emerald-500"
             />
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-medium text-white/85">
               {isBn ? 'পাসওয়ার্ডের উপরে খরগোশ লোগো দেখান' : 'Show center rabbit logo above title'}
             </span>
           </label>
         </div>
 
         {/* Wallpaper & Darkness */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 space-y-4 shadow-sm">
+        <div className="rounded-2xl border border-white/20 bg-black/40 backdrop-blur-md p-5 sm:p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-950/60 border border-violet-200 dark:border-violet-800/70 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-violet-500/20 border border-violet-400/35 text-violet-300 flex items-center justify-center shrink-0">
                 <ImagePlus className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h2 className="text-sm font-bold text-white">
                   {isBn ? 'প্রবেশ পেজের ওয়েলপেপার' : 'Entry Screen Wallpaper'}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-white/70">
                   {isBn
                     ? 'গ্যালারি থেকে নতুন ওয়েলপেপার ছবি দিন অথবা ডিফল্ট ওয়েলপেপার ব্যবহার করুন।'
                     : 'Upload a custom wallpaper image or reset to default.'}
@@ -557,7 +557,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           </div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-28 h-40 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black shrink-0 shadow-sm">
+            <div className="w-28 h-40 rounded-xl overflow-hidden border border-white/25 bg-black shrink-0 shadow-sm">
               <img
                 src={wallpaperDataUrl || DEFAULT_GATE_WALLPAPER_URL}
                 alt="Wallpaper Preview"
@@ -577,9 +577,9 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                 <button
                   type="button"
                   onClick={() => wallpaperInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-white/25 bg-black/30 hover:bg-black/45 text-xs font-semibold text-white transition-colors"
                 >
-                  <ImagePlus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <ImagePlus className="w-4 h-4 text-emerald-300" />
                   <span>{isBn ? 'গ্যালারি থেকে ওয়েলপেপার দিন' : 'Choose Wallpaper'}</span>
                 </button>
 
@@ -587,7 +587,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                   <button
                     type="button"
                     onClick={() => setWallpaperDataUrl(undefined)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/25 text-xs font-medium text-white/85 hover:bg-white/10 transition-colors"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>{isBn ? 'আগের ওয়েলপেপারে ফিরুন' : 'Use Default Wallpaper'}</span>
@@ -596,7 +596,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
               </div>
 
               <div>
-                <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <p className="text-xs font-medium text-white/80 mb-1.5">
                   {isBn
                     ? `ওয়েলপেপার ডার্কনেস (${overlayOpacity}%)`
                     : `Wallpaper Dimming (${overlayOpacity}%)`}
@@ -610,7 +610,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
                       className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                         overlayOpacity === step
                           ? 'bg-emerald-600 text-white'
-                          : 'border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          : 'border border-white/20 bg-black/30 text-white/80 hover:bg-white/15'
                       }`}
                     >
                       {step}%
@@ -623,14 +623,14 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
         </div>
 
         {settingsErr && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300">
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-950/60 border border-red-400/40 text-xs text-red-200">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <span>{settingsErr}</span>
           </div>
         )}
 
         {settingsMsg && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs text-emerald-700 dark:text-emerald-300">
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-950/60 border border-emerald-400/40 text-xs text-emerald-200">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{settingsMsg}</span>
           </div>
@@ -640,7 +640,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           <button
             type="button"
             onClick={handleResetVisuals}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-white/25 bg-black/25 text-xs font-medium text-white/85 hover:bg-white/10 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{isBn ? 'লেখা ও ছবি ডিফল্ট করুন' : 'Reset Texts & Theme'}</span>
@@ -649,7 +649,7 @@ export function SiteSettingsView({ lang, config, onSaveConfig }: SiteSettingsVie
           <button
             type="submit"
             disabled={savingSettings}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs sm:text-sm font-semibold transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs sm:text-sm font-semibold transition-colors shadow-lg"
           >
             <Save className="w-4 h-4" />
             <span>

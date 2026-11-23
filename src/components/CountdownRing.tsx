@@ -11,27 +11,27 @@ export function CountdownRing({ remainingSeconds, period, secondsShort }: Countd
   const isCritical = remainingSeconds <= 3;
 
   const barColorClass = isCritical
-    ? 'bg-red-600 dark:bg-red-500'
+    ? 'bg-red-400'
     : isUrgent
-    ? 'bg-amber-500 dark:bg-amber-400'
-    : 'bg-emerald-600 dark:bg-emerald-500';
+    ? 'bg-amber-400'
+    : 'bg-emerald-400';
 
   const textColorClass = isCritical
-    ? 'text-red-600 dark:text-red-400'
+    ? 'text-red-300'
     : isUrgent
-    ? 'text-amber-600 dark:text-amber-400'
-    : 'text-slate-700 dark:text-slate-200';
+    ? 'text-amber-300'
+    : 'text-white';
 
   return (
     <div
-      className="w-14 px-1.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col items-center gap-1.5 shrink-0"
+      className="w-14 px-1 py-0.5 bg-transparent flex flex-col items-center gap-1 shrink-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)]"
       aria-label={`${remainingSeconds}${secondsShort}`}
     >
       <span className={`text-xs font-mono font-bold tabular-nums leading-none ${textColorClass}`}>
         {remainingSeconds}
         {secondsShort}
       </span>
-      <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+      <div className="w-full h-1 rounded-full bg-white/25 overflow-hidden">
         <div
           className={`h-full w-full origin-left transition-transform duration-300 ease-linear ${barColorClass}`}
           style={{ transform: `scaleX(${fraction})` }}

@@ -5,12 +5,12 @@ interface AccountAvatarProps {
 }
 
 const AVATAR_PALETTES = [
-  'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/70',
-  'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800/70',
-  'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/70',
-  'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/70',
-  'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800/70',
-  'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700',
+  'bg-emerald-950/55 text-emerald-200 border-white/25',
+  'bg-sky-950/55 text-sky-200 border-white/25',
+  'bg-indigo-950/55 text-indigo-200 border-white/25',
+  'bg-amber-950/55 text-amber-200 border-white/25',
+  'bg-teal-950/55 text-teal-200 border-white/25',
+  'bg-black/45 text-white border-white/25',
 ];
 
 function getInitials(name: string): string {
@@ -45,7 +45,7 @@ export function AccountAvatar({ issuer, avatarDataUrl, size = 'md' }: AccountAva
         src={avatarDataUrl}
         alt={issuer}
         referrerPolicy="no-referrer"
-        className={`${sizeClass} object-cover border border-slate-200 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-900`}
+        className={`${sizeClass} object-cover border border-white/30 shrink-0 bg-black/30 shadow-md`}
       />
     );
   }

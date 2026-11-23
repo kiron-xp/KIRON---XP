@@ -201,12 +201,12 @@ export function AddAccountView({
         {/* Manual Entry Form */}
         <form
           onSubmit={handleSubmit}
-          className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-5"
+          className="lg:col-span-7 bg-black/40 backdrop-blur-md border border-white/20 rounded-xl p-6 space-y-5 text-white shadow-xl"
         >
           {/* Service Name & Caption */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-white/80 mb-1.5">
                 {t.serviceNameLabel}
               </label>
               <input
@@ -214,12 +214,12 @@ export function AddAccountView({
                 value={issuer}
                 onChange={(e) => setIssuer(e.target.value)}
                 placeholder={t.serviceNamePlaceholder}
-                className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-white/80 mb-1.5">
                 {t.captionLabel}
               </label>
               <input
@@ -227,20 +227,20 @@ export function AddAccountView({
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder={t.captionPlaceholder}
-                className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
             </div>
           </div>
 
           {/* Gallery Image Upload */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-medium text-white/80 mb-1.5">
               {t.galleryIconLabel}
             </label>
             <div className="flex items-center gap-4">
               <AccountAvatar issuer={issuer || 'Prohori'} avatarDataUrl={avatarDataUrl} size="lg" />
               <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors">
+                <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-white/25 bg-black/30 hover:bg-black/45 text-xs font-medium text-white cursor-pointer transition-colors">
                   <ImagePlus className="w-4 h-4" />
                   <span>{t.uploadIconBtn}</span>
                   <input
@@ -254,7 +254,7 @@ export function AddAccountView({
                   <button
                     type="button"
                     onClick={() => setAvatarDataUrl(undefined)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-red-300 hover:bg-red-500/20 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>{t.removeIconBtn}</span>
@@ -267,13 +267,13 @@ export function AddAccountView({
           {/* Base32 Secret Key + Random Generator */}
           <div>
             <div className="flex items-center justify-between gap-2 mb-1.5">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-medium text-white/80">
                 {t.secretKeyLabel}
               </label>
               <button
                 type="button"
                 onClick={handleGenerateRandom}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300 hover:text-emerald-200"
               >
                 <Dices className="w-3.5 h-3.5" />
                 <span>{t.generateRandomKey}</span>
@@ -285,12 +285,12 @@ export function AddAccountView({
                 value={secret}
                 onChange={(e) => setSecret(e.target.value)}
                 placeholder={t.secretKeyPlaceholder}
-                className="w-full px-3.5 py-2.5 pr-10 font-mono text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                className="w-full px-3.5 py-2.5 pr-10 font-mono text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
               />
               <button
                 type="button"
                 onClick={() => setShowSecret((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-white/65 hover:text-white"
                 aria-label="Toggle secret visibility"
               >
                 {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -301,7 +301,7 @@ export function AddAccountView({
           {/* Category & OTP Type */}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-white/80 mb-1.5">
                 {t.categoryLabel}
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -314,8 +314,8 @@ export function AddAccountView({
                       onClick={() => setCategory(cat)}
                       className={`px-3 py-2 rounded-lg border text-center text-xs font-semibold tracking-wide transition-colors whitespace-nowrap ${
                         active
-                          ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          ? 'border-emerald-400 bg-emerald-500/25 text-emerald-200'
+                          : 'border-white/20 bg-black/25 text-white/80 hover:bg-black/40 hover:text-white'
                       }`}
                     >
                       {cat}
@@ -326,7 +326,7 @@ export function AddAccountView({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-white/80 mb-1.5">
                 {t.otpTypeLabel}
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -337,8 +337,8 @@ export function AddAccountView({
                     onClick={() => setType(opt)}
                     className={`px-3.5 py-2.5 rounded-lg border text-center text-xs font-semibold tracking-wide transition-colors ${
                       type === opt
-                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        ? 'border-emerald-400 bg-emerald-500/25 text-emerald-200'
+                        : 'border-white/20 bg-black/25 text-white/80 hover:bg-black/40 hover:text-white'
                     }`}
                   >
                     {opt.toUpperCase()}
@@ -350,12 +350,11 @@ export function AddAccountView({
 
           {/* Digits, Period/Counter */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-white/80 mb-1.5">
                 {t.digitsLabel}
               </label>
-              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-black/35 border border-white/20">
                 {([6, 8] as const).map((d) => (
                   <button
                     key={d}
@@ -363,8 +362,8 @@ export function AddAccountView({
                     onClick={() => setDigits(d)}
                     className={`py-1 text-xs font-mono font-semibold rounded-md transition-colors ${
                       digits === d
-                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs'
-                        : 'text-slate-500 dark:text-slate-400'
+                        ? 'bg-emerald-600/85 text-white shadow-xs'
+                        : 'text-white/65 hover:text-white'
                     }`}
                   >
                     {d}
@@ -375,13 +374,13 @@ export function AddAccountView({
 
             {type === 'totp' ? (
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-white/80 mb-1.5">
                   {t.periodLabel}
                 </label>
                 <select
                   value={period}
                   onChange={(e) => setPeriod(Number(e.target.value) as TotpPeriod)}
-                  className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                  className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-white/25 bg-black/40 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
                 >
                   <option value={15}>15s</option>
                   <option value={30}>30s</option>
@@ -391,7 +390,7 @@ export function AddAccountView({
               </div>
             ) : (
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-white/80 mb-1.5">
                   {t.initialCounterLabel}
                 </label>
                 <input
@@ -399,14 +398,14 @@ export function AddAccountView({
                   min={0}
                   value={counter}
                   onChange={(e) => setCounter(Math.max(0, Number(e.target.value) || 0))}
-                  className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                  className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-white/25 bg-black/30 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
                 />
               </div>
             )}
           </div>
 
           {errorMsg && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300">
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-950/60 border border-red-400/40 text-xs text-red-200">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
@@ -415,7 +414,7 @@ export function AddAccountView({
           <div className="flex items-center gap-3 pt-2">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0"
             >
               <Save className="w-4 h-4" />
               <span>{editingAccount ? t.updateAccountBtn : t.saveAccountBtn}</span>
@@ -425,7 +424,7 @@ export function AddAccountView({
               <button
                 type="button"
                 onClick={onCancelEdit}
-                className="px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                className="px-4 py-2.5 rounded-lg border border-white/25 text-sm font-medium text-white/85 hover:bg-white/10 transition-colors"
               >
                 {t.cancel}
               </button>
@@ -433,34 +432,34 @@ export function AddAccountView({
           </div>
         </form>
 
-        {/* Live Preview Panel */}
-        <div className="lg:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 space-y-5">
-          <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+        {/* Live Preview Panel (Transparent/Blended over wallpaper) */}
+        <div className="lg:col-span-5 bg-black/30 backdrop-blur-sm border border-white/20 rounded-xl p-6 space-y-5 text-white">
+          <div className="text-xs font-medium text-white/70">
             {t.livePreviewLabel}
           </div>
 
           <div className="flex items-start gap-3.5">
             <AccountAvatar issuer={issuer || 'Prohori'} avatarDataUrl={avatarDataUrl} />
             <div className="min-w-0 space-y-0.5">
-              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+              <div className="text-sm font-semibold text-white truncate">
                 MD KIRON MONDAL
               </div>
-              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+              <div className="text-xs font-semibold text-white/90 truncate">
                 {issuer.trim() || t.serviceNamePlaceholder.split(',')[0]}
               </div>
-              <div className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
+              <div className="text-xs font-medium text-white/75 truncate">
                 {type.toUpperCase()} - {category}
               </div>
               {caption.trim() && (
-                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                <div className="text-xs text-white/65 truncate">
                   {caption.trim()}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 py-3 border-y border-slate-100 dark:border-slate-800">
-            <span className="font-mono text-3xl font-bold tracking-wider tabular-nums text-slate-900 dark:text-white">
+          <div className="flex items-center justify-between gap-4 py-3 border-y border-white/15">
+            <span className="font-mono text-3xl font-bold tracking-wider tabular-nums text-emerald-300">
               {formattedCode}
             </span>
             {type === 'totp' && isValidBase32(secret) && (
@@ -472,8 +471,8 @@ export function AddAccountView({
             )}
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-            <span className="font-medium text-slate-700 dark:text-slate-300">
+          <div className="flex items-center gap-2 text-xs text-white/75 tabular-nums">
+            <span className="font-medium text-white/90">
               {type.toUpperCase()} - {category}
             </span>
             <span aria-hidden="true">·</span>

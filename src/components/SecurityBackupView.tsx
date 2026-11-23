@@ -422,9 +422,9 @@ export function SecurityBackupView({
     <div className="space-y-6">
       {/* Upload Panel (only shown when triggered via Hamburger Menu -> XP - 4) */}
       {uploadPanelOpen && (
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 space-y-4">
+        <section className="bg-black/45 backdrop-blur-md border border-white/20 rounded-xl p-5 sm:p-6 space-y-4 text-white shadow-xl">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <span className="text-sm font-semibold text-white">
               {t.menuAddMedia}
             </span>
             <button
@@ -436,15 +436,15 @@ export function SecurityBackupView({
                 setUploadError('');
               }}
               aria-label={t.close}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-500/50 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
-              <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-white/25 bg-black/30 hover:bg-emerald-500/20 hover:border-emerald-400/50 text-xs sm:text-sm font-semibold text-white cursor-pointer transition-colors whitespace-nowrap">
+              <ImageIcon className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>{t.mediaUploadPhotoBtn}</span>
               <input
                 type="file"
@@ -456,8 +456,8 @@ export function SecurityBackupView({
               />
             </label>
 
-            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:border-violet-500/50 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
-              <Film className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
+            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-white/25 bg-black/30 hover:bg-violet-500/20 hover:border-violet-400/50 text-xs sm:text-sm font-semibold text-white cursor-pointer transition-colors whitespace-nowrap">
+              <Film className="w-4 h-4 text-violet-400 shrink-0" />
               <span>{t.mediaUploadVideoBtn}</span>
               <input
                 type="file"
@@ -468,8 +468,8 @@ export function SecurityBackupView({
               />
             </label>
 
-            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:border-sky-500/50 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
-              <Sparkles className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-white/25 bg-black/30 hover:bg-sky-500/20 hover:border-sky-400/50 text-xs sm:text-sm font-semibold text-white cursor-pointer transition-colors whitespace-nowrap">
+              <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
               <span>{t.mediaUploadScreenshotBtn}</span>
               <input
                 type="file"
@@ -491,11 +491,11 @@ export function SecurityBackupView({
               }}
               className={`inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
                 numberFormOpen
-                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-500/50 text-slate-800 dark:text-slate-100'
+                  ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                  : 'border-white/25 bg-black/30 hover:bg-amber-500/20 hover:border-amber-400/50 text-white'
               }`}
             >
-              <Hash className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <Hash className="w-4 h-4 text-amber-400 shrink-0" />
               <span>{t.mediaAddNumberBtn}</span>
             </button>
           </div>
@@ -503,17 +503,17 @@ export function SecurityBackupView({
           {pendingUpload && (
             <form
               onSubmit={handleConfirmMediaUpload}
-              className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 space-y-3"
+              className="p-4 rounded-xl border border-white/20 bg-black/40 space-y-3"
             >
               <div className="flex items-center gap-3">
                 {pendingUpload.previewUrl ? (
                   <img
                     src={pendingUpload.previewUrl}
                     alt={pendingUpload.files[0]?.name}
-                    className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                    className="w-14 h-14 rounded-lg object-cover border border-white/25 shrink-0"
                   />
                 ) : (
-                  <div className="w-14 h-14 rounded-lg bg-violet-100 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+                  <div className="w-14 h-14 rounded-lg bg-violet-500/25 text-violet-300 flex items-center justify-center shrink-0">
                     <Film className="w-6 h-6" />
                   </div>
                 )}
@@ -522,13 +522,13 @@ export function SecurityBackupView({
                     <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-semibold shrink-0">
                       {getKindBadgeLabel(pendingUpload.kind)}
                     </span>
-                    <span className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">
+                    <span className="text-xs font-medium text-white truncate">
                       {pendingUpload.files.length > 1
                         ? `${pendingUpload.files.length} files`
                         : pendingUpload.files[0]?.name}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
+                  <p className="text-[11px] text-white/65 mt-0.5 tabular-nums">
                     {formatFileSize(
                       pendingUpload.files.reduce((sum, f) => sum + f.size, 0)
                     )}
@@ -537,7 +537,7 @@ export function SecurityBackupView({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-white/80 mb-1">
                   {t.mediaUploadTitleLabel}
                 </label>
                 <input
@@ -551,12 +551,12 @@ export function SecurityBackupView({
                   }
                   placeholder={t.mediaUploadTitlePlaceholder}
                   autoFocus
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-white/80 mb-1">
                   {t.mediaUploadCaptionLabel}
                 </label>
                 <textarea
@@ -569,7 +569,7 @@ export function SecurityBackupView({
                     )
                   }
                   placeholder={t.mediaUploadCaptionPlaceholder}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600 resize-none"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400 resize-none"
                 />
               </div>
 
@@ -578,14 +578,14 @@ export function SecurityBackupView({
                   type="button"
                   disabled={uploading}
                   onClick={clearPendingUpload}
-                  className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-3.5 py-2 rounded-lg border border-white/25 text-xs font-medium text-white/85 hover:bg-white/10"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>{t.mediaConfirmUploadBtn}</span>
@@ -595,14 +595,14 @@ export function SecurityBackupView({
           )}
 
           {uploading && (
-            <div className="space-y-1.5 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
-              <div className="flex items-center justify-between text-xs font-medium text-emerald-800 dark:text-emerald-300">
+            <div className="space-y-1.5 p-3 rounded-lg bg-emerald-950/60 border border-emerald-400/40">
+              <div className="flex items-center justify-between text-xs font-medium text-emerald-200">
                 <span>{t.mediaUploadingLabel}</span>
                 <span className="tabular-nums">{uploadProgress}%</span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-emerald-200 dark:bg-emerald-950 overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-white/20 overflow-hidden">
                 <div
-                  className="h-full bg-emerald-600 transition-all duration-200"
+                  className="h-full bg-emerald-400 transition-all duration-200"
                   style={{ width: `${Math.max(8, uploadProgress)}%` }}
                 />
               </div>
@@ -610,7 +610,7 @@ export function SecurityBackupView({
           )}
 
           {uploadError && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs text-red-700 dark:text-red-300">
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-950/60 border border-red-400/40 text-xs text-red-200">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{uploadError}</span>
             </div>
@@ -619,11 +619,11 @@ export function SecurityBackupView({
           {numberFormOpen && (
             <form
               onSubmit={handleSaveNumber}
-              className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 space-y-3"
+              className="p-4 rounded-xl border border-white/20 bg-black/40 space-y-3"
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-white/80 mb-1">
                     {t.mediaNumberLabel}
                   </label>
                   <input
@@ -632,11 +632,11 @@ export function SecurityBackupView({
                     onChange={(e) => setNumberValue(e.target.value)}
                     placeholder={t.mediaNumberPlaceholder}
                     autoFocus
-                    className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                    className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-white/80 mb-1">
                     {t.mediaTitleLabel}
                   </label>
                   <input
@@ -644,13 +644,13 @@ export function SecurityBackupView({
                     value={numberTitle}
                     onChange={(e) => setNumberTitle(e.target.value)}
                     placeholder={t.mediaTitlePlaceholder}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-white/80 mb-1">
                   {t.mediaNoteLabel}
                 </label>
                 <input
@@ -658,7 +658,7 @@ export function SecurityBackupView({
                   value={numberNote}
                   onChange={(e) => setNumberNote(e.target.value)}
                   placeholder={t.mediaNotePlaceholder}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-white/25 bg-black/30 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
                 />
               </div>
 
@@ -666,14 +666,14 @@ export function SecurityBackupView({
                 <button
                   type="button"
                   onClick={() => setNumberFormOpen(false)}
-                  className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-3.5 py-2 rounded-lg border border-white/25 text-xs font-medium text-white/85 hover:bg-white/10"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
                 >
                   {t.mediaSaveNumberBtn}
                 </button>
@@ -683,8 +683,8 @@ export function SecurityBackupView({
         </section>
       )}
 
-      {/* Strictly Separated Category Sections: PHOTO, VIDEO, KIRON, NUMBER */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 space-y-5">
+      {/* Strictly Separated Category Sections (Blended transparently over wallpaper) */}
+      <section className="bg-transparent space-y-5">
         <div className="flex flex-wrap items-center gap-1.5">
           {(
             [
@@ -700,10 +700,10 @@ export function SecurityBackupView({
                 key={id}
                 type="button"
                 onClick={() => setFilterKind(id)}
-                className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors whitespace-nowrap ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors whitespace-nowrap drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] ${
                   active
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    ? 'bg-emerald-600/85 border border-emerald-400 text-white'
+                    : 'bg-black/25 border border-white/20 text-white/85 hover:bg-black/45 hover:text-white'
                 }`}
               >
                 {label} ({count})
@@ -714,11 +714,11 @@ export function SecurityBackupView({
 
         {/* Category Content */}
         {categoryItems.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center space-y-2">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+          <div className="rounded-xl border border-dashed border-white/25 bg-black/20 backdrop-blur-xs p-8 text-center space-y-2 text-white">
+            <p className="text-sm font-semibold text-white">
               {t.mediaEmptyTitle}
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            <p className="text-xs text-white/75 max-w-md mx-auto">
               {t.mediaEmptyDesc}
             </p>
           </div>
@@ -734,7 +734,7 @@ export function SecurityBackupView({
               return (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 overflow-hidden flex flex-col justify-between"
+                  className="rounded-xl border border-white/20 bg-black/20 backdrop-blur-[2px] overflow-hidden flex flex-col justify-between"
                 >
                   {/* PHOTO & KIRON Visual Preview (Full uncropped photo on display) */}
                   {(item.kind === 'photo' || item.kind === 'screenshot') && (
@@ -811,25 +811,25 @@ export function SecurityBackupView({
 
                   {/* NUMBER Card */}
                   {item.kind === 'number' && (
-                    <div className="p-4 pb-2 space-y-1.5">
+                    <div className="p-4 pb-2 space-y-1.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
                           {getKindBadgeLabel('number')}
                         </span>
-                        <span className="text-[11px] text-slate-400 tabular-nums">
+                        <span className="text-[11px] text-white/65 tabular-nums">
                           {formatMediaDate(item.createdAt)}
                         </span>
                       </div>
-                      <p className="font-mono text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 break-all select-all">
+                      <p className="font-mono text-base sm:text-lg font-bold text-white break-all select-all">
                         {item.numberValue || item.title}
                       </p>
                       {item.title && item.title !== item.numberValue && (
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
+                        <p className="text-xs font-medium text-white/85 truncate">
                           {item.title}
                         </p>
                       )}
                       {item.note && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
+                        <p className="text-xs text-white/75 break-words">
                           {item.note}
                         </p>
                       )}
@@ -837,27 +837,27 @@ export function SecurityBackupView({
                   )}
 
                   {/* Footer Actions & Title/Caption */}
-                  <div className="p-3.5 pt-2.5 space-y-2">
+                  <div className="p-3.5 pt-2.5 space-y-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
                     {item.kind !== 'number' && (
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2 text-xs">
-                          <span className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                          <span className="font-semibold text-white truncate">
                             {item.title}
                           </span>
-                          <span className="text-[11px] text-slate-400 shrink-0 tabular-nums">
+                          <span className="text-[11px] text-white/65 shrink-0 tabular-nums">
                             {formatFileSize(item.fileSize)}
                           </span>
                         </div>
                         {item.note && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400 break-words leading-relaxed">
+                          <p className="text-xs text-white/80 break-words leading-relaxed">
                             {item.note}
                           </p>
                         )}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/70 dark:border-slate-800">
-                      <span className="text-[11px] text-slate-400 tabular-nums truncate">
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/15">
+                      <span className="text-[11px] text-white/65 tabular-nums truncate">
                         {item.kind !== 'number' ? formatMediaDate(item.createdAt) : ''}
                       </span>
 
@@ -870,8 +870,8 @@ export function SecurityBackupView({
                             }
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-colors ${
                               isCopied
-                                ? 'border-emerald-600 bg-emerald-600 text-white'
-                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                ? 'border-emerald-400 bg-emerald-600/85 text-white'
+                                : 'border-white/25 bg-black/25 text-white hover:bg-black/45'
                             }`}
                           >
                             {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -888,7 +888,7 @@ export function SecurityBackupView({
                             type="button"
                             onClick={() => handleDownloadMedia(item)}
                             title={t.mediaDownloadBtn}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-medium text-slate-700 dark:text-slate-200 transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-white/25 bg-black/25 hover:bg-black/45 text-[11px] font-medium text-white transition-colors"
                           >
                             <Download className="w-3 h-3" />
                             <span>{t.mediaDownloadBtn}</span>
@@ -901,7 +901,7 @@ export function SecurityBackupView({
                             setConfirmDeleteId(isConfirming ? null : item.id)
                           }
                           title={t.deleteAccount}
-                          className="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                          className="p-1.5 rounded-md text-white/70 hover:text-red-300 hover:bg-red-500/20 transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -909,8 +909,8 @@ export function SecurityBackupView({
                     </div>
 
                     {isConfirming && (
-                      <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-xs">
-                        <span className="text-red-700 dark:text-red-300 font-medium">
+                      <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-red-950/75 border border-red-400/50 text-xs">
+                        <span className="text-red-100 font-medium">
                           {t.mediaDeleteConfirm}
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -927,7 +927,7 @@ export function SecurityBackupView({
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
-                            className="px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                            className="px-2 py-0.5 rounded border border-white/25 text-white"
                           >
                             {t.cancel}
                           </button>
@@ -945,22 +945,22 @@ export function SecurityBackupView({
       {/* Fullscreen Lightbox Modal for Full Photo & Full Video */}
       {lightboxItem && lightboxMediaSrc && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/92 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/92 backdrop-blur-xs"
           onClick={() => setLightboxItem(null)}
           role="dialog"
           aria-modal="true"
         >
           <div
-            className="relative max-w-5xl w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-2xl"
+            className="relative max-w-5xl w-full bg-slate-950/95 border border-white/20 rounded-2xl overflow-hidden shadow-2xl text-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+            <div className="px-4 py-3 border-b border-white/15 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                <p className="text-sm font-semibold text-white truncate">
                   {lightboxItem.title}
                 </p>
                 {lightboxItem.note && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  <p className="text-xs text-white/70 truncate mt-0.5">
                     {lightboxItem.note}
                   </p>
                 )}
@@ -969,7 +969,7 @@ export function SecurityBackupView({
                 <button
                   type="button"
                   onClick={() => handleDownloadMedia(lightboxItem)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>{t.mediaDownloadBtn}</span>
@@ -978,7 +978,7 @@ export function SecurityBackupView({
                   type="button"
                   onClick={() => setLightboxItem(null)}
                   aria-label={t.close}
-                  className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="p-1.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </button>

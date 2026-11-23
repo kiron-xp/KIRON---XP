@@ -29,33 +29,33 @@ const NOTE_COLORS: Array<{
 }> = [
   {
     id: 'default',
-    cardClass: 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800',
-    swatchClass: 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600',
+    cardClass: 'bg-black/20 backdrop-blur-[2px] border-white/20',
+    swatchClass: 'bg-slate-800 border-white/40',
   },
   {
     id: 'emerald',
-    cardClass: 'bg-emerald-50/90 dark:bg-emerald-950/45 border-emerald-200 dark:border-emerald-800/70',
-    swatchClass: 'bg-emerald-200 dark:bg-emerald-700 border-emerald-400 dark:border-emerald-500',
+    cardClass: 'bg-emerald-950/40 backdrop-blur-[2px] border-emerald-400/35',
+    swatchClass: 'bg-emerald-700 border-emerald-400',
   },
   {
     id: 'amber',
-    cardClass: 'bg-amber-50/90 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/70',
-    swatchClass: 'bg-amber-200 dark:bg-amber-700 border-amber-400 dark:border-amber-500',
+    cardClass: 'bg-amber-950/40 backdrop-blur-[2px] border-amber-400/35',
+    swatchClass: 'bg-amber-700 border-amber-400',
   },
   {
     id: 'sky',
-    cardClass: 'bg-sky-50/90 dark:bg-sky-950/45 border-sky-200 dark:border-sky-800/70',
-    swatchClass: 'bg-sky-200 dark:bg-sky-700 border-sky-400 dark:border-sky-500',
+    cardClass: 'bg-sky-950/40 backdrop-blur-[2px] border-sky-400/35',
+    swatchClass: 'bg-sky-700 border-sky-400',
   },
   {
     id: 'rose',
-    cardClass: 'bg-rose-50/90 dark:bg-rose-950/45 border-rose-200 dark:border-rose-800/70',
-    swatchClass: 'bg-rose-200 dark:bg-rose-700 border-rose-400 dark:border-rose-500',
+    cardClass: 'bg-rose-950/40 backdrop-blur-[2px] border-rose-400/35',
+    swatchClass: 'bg-rose-700 border-rose-400',
   },
   {
     id: 'violet',
-    cardClass: 'bg-violet-50/90 dark:bg-violet-950/45 border-violet-200 dark:border-violet-800/70',
-    swatchClass: 'bg-violet-200 dark:bg-violet-700 border-violet-400 dark:border-violet-500',
+    cardClass: 'bg-violet-950/40 backdrop-blur-[2px] border-violet-400/35',
+    swatchClass: 'bg-violet-700 border-violet-400',
   },
 ];
 
@@ -225,10 +225,10 @@ export function NotesDiaryView({
           note.color
         )}`}
       >
-        <div className="space-y-2 min-w-0 flex-1">
+        <div className="space-y-2 min-w-0 flex-1 drop-shadow-[0_1px_5px_rgba(0,0,0,0.95)]">
           {/* Header: MD KIRON MONDAL + Pencil menu (Edit / Copy / Delete) */}
           <div className="flex items-center gap-2 min-w-0">
-            <h3 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 truncate">
+            <h3 className="text-sm sm:text-base font-bold text-white truncate">
               MD KIRON MONDAL
             </h3>
 
@@ -242,8 +242,8 @@ export function NotesDiaryView({
                 aria-label={t.editAccount}
                 className={`inline-flex items-center justify-center p-0.5 rounded transition-colors ${
                   openMenuId === note.id
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200'
+                    ? 'text-emerald-300'
+                    : 'text-white/75 hover:text-white'
                 }`}
               >
                 <Edit3 className="w-3.5 h-3.5" />
@@ -252,7 +252,7 @@ export function NotesDiaryView({
               {openMenuId === note.id && (
                 <div
                   role="menu"
-                  className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg py-1.5 z-40"
+                  className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-white/20 bg-slate-950/95 backdrop-blur-md shadow-2xl py-1.5 z-40"
                 >
                   <button
                     type="button"
@@ -261,9 +261,9 @@ export function NotesDiaryView({
                       setOpenMenuId(null);
                       openEditor(note);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-white/90 hover:bg-white/10 text-left transition-colors whitespace-nowrap"
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <Edit3 className="w-3.5 h-3.5 text-white/60 shrink-0" />
                     <span>{t.editAccount}</span>
                   </button>
 
@@ -274,17 +274,17 @@ export function NotesDiaryView({
                       setOpenMenuId(null);
                       handleCopyNote(note);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-white/90 hover:bg-white/10 text-left transition-colors whitespace-nowrap"
                   >
                     {isCopied ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Copy className="w-3.5 h-3.5 text-white/60 shrink-0" />
                     )}
                     <span>{isCopied ? t.copied : copyLabel}</span>
                   </button>
 
-                  <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                  <div className="my-1 border-t border-white/15" />
 
                   <button
                     type="button"
@@ -293,7 +293,7 @@ export function NotesDiaryView({
                       setOpenMenuId(null);
                       setConfirmDeleteId(isConfirming ? null : note.id);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left transition-colors whitespace-nowrap"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-400 hover:bg-red-500/15 text-left transition-colors whitespace-nowrap"
                   >
                     <Trash2 className="w-3.5 h-3.5 shrink-0" />
                     <span>{t.deleteAccount}</span>
@@ -304,36 +304,36 @@ export function NotesDiaryView({
           </div>
 
           {note.title && (
-            <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200 break-words leading-snug">
+            <p className="text-xs sm:text-sm font-semibold text-white/95 break-words leading-snug">
               {note.title}
             </p>
           )}
 
           {note.content && (
-            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-words leading-relaxed max-h-52 overflow-hidden">
+            <p className="text-xs sm:text-sm text-white/85 whitespace-pre-wrap break-words leading-relaxed max-h-52 overflow-hidden">
               {note.content}
             </p>
           )}
         </div>
 
-        <div className="pt-2 border-t border-black/5 dark:border-white/10 flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="pt-2 border-t border-white/15 flex items-center justify-between gap-2 text-[11px] text-white/70 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
           <span className="tabular-nums truncate">{formatNoteDate(note.updatedAt)}</span>
           <div className="flex items-center gap-2 shrink-0">
             {isCopied && (
-              <span className="inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1 font-medium text-emerald-300">
                 <Check className="w-3 h-3" />
                 <span>{t.copied}</span>
               </span>
             )}
             {note.pinned && (
-              <Pin className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+              <Pin className="w-3 h-3 text-emerald-300" />
             )}
           </div>
         </div>
 
         {isConfirming && (
-          <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/60 text-xs">
-            <span className="text-red-700 dark:text-red-300 font-medium">{t.noteDeleteConfirm}</span>
+          <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-red-950/75 border border-red-400/50 text-xs">
+            <span className="text-red-100 font-medium">{t.noteDeleteConfirm}</span>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
@@ -348,7 +348,7 @@ export function NotesDiaryView({
               <button
                 type="button"
                 onClick={() => setConfirmDeleteId(null)}
-                className="px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                className="px-2 py-0.5 rounded border border-white/25 text-white"
               >
                 {t.cancel}
               </button>
@@ -360,24 +360,24 @@ export function NotesDiaryView({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Full-Width Search Bar */}
       {notes.length > 0 && (
         <div className="relative w-full">
-          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-5 h-5 text-white/75 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t.notesSearchPlaceholder}
-            className="w-full pl-11 pr-10 py-3 text-sm sm:text-base rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-600/25 focus:border-emerald-600"
+            className="w-full pl-11 pr-10 py-2.5 text-sm sm:text-base rounded-xl border border-white/25 bg-black/20 backdrop-blur-xs text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/60 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch('')}
               aria-label={t.close}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-white/75 hover:text-white hover:bg-white/15 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -390,9 +390,7 @@ export function NotesDiaryView({
         <div className="max-w-2xl mx-auto">
           <form
             onSubmit={handleCreateSubmit}
-            className={`rounded-xl border p-4 space-y-3 shadow-sm transition-colors ${getCardColorClass(
-              color
-            )}`}
+            className="rounded-xl border border-white/20 bg-slate-950/90 backdrop-blur-md p-4 space-y-3 shadow-xl transition-colors text-white"
           >
             <div className="flex items-center gap-2">
               <input
@@ -400,7 +398,7 @@ export function NotesDiaryView({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t.noteTitlePlaceholder}
-                className="flex-1 bg-transparent text-sm font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
+                className="flex-1 bg-transparent text-sm font-semibold text-white placeholder:text-white/50 focus:outline-none"
               />
               <button
                 type="button"
@@ -408,8 +406,8 @@ export function NotesDiaryView({
                 title={pinned ? t.noteUnpinAction : t.notePinAction}
                 className={`p-1.5 rounded-lg transition-colors ${
                   pinned
-                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-600/10'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    ? 'text-emerald-300 bg-emerald-500/20'
+                    : 'text-white/65 hover:text-white'
                 }`}
               >
                 {pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
@@ -427,10 +425,10 @@ export function NotesDiaryView({
                 }
               }}
               placeholder={t.noteBodyPlaceholder}
-              className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none resize-y leading-relaxed"
+              className="w-full bg-transparent text-sm text-white/90 placeholder:text-white/50 focus:outline-none resize-y leading-relaxed"
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-black/5 dark:border-white/10">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/15">
               {/* Color swatches */}
               <div className="flex items-center gap-1.5" aria-label={t.noteColorLabel}>
                 {NOTE_COLORS.map((c) => (
@@ -443,7 +441,7 @@ export function NotesDiaryView({
                       c.swatchClass
                     } ${
                       color === c.id
-                        ? 'scale-110 ring-2 ring-emerald-600/40'
+                        ? 'scale-110 ring-2 ring-emerald-400/60'
                         : 'opacity-80 hover:opacity-100'
                     }`}
                   />
@@ -454,13 +452,13 @@ export function NotesDiaryView({
                 <button
                   type="button"
                   onClick={resetComposer}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium text-white/80 hover:bg-white/10 transition-colors"
                 >
                   {t.close}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
                 >
                   {t.noteSaveBtn}
                 </button>
@@ -472,26 +470,26 @@ export function NotesDiaryView({
 
       {/* Notes Grid or Empty State */}
       {notes.length === 0 && !composerOpen ? (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center max-w-xl mx-auto">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-black/25 backdrop-blur-xs border border-white/20 rounded-2xl p-10 text-center max-w-xl mx-auto text-white">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-400/35 text-emerald-300 flex items-center justify-center mx-auto mb-4">
             <StickyNote className="w-6 h-6" />
           </div>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="text-base font-semibold text-white">
             {t.noteEmptyTitle}
           </h2>
-          <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          <p className="mt-1.5 text-sm text-white/75 leading-relaxed">
             {t.noteEmptyDesc}
           </p>
         </div>
       ) : filteredNotes.length === 0 && !composerOpen ? (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+        <div className="bg-black/20 backdrop-blur-xs border border-white/15 rounded-xl p-8 text-center text-sm text-white/80">
           {t.noteNoMatch}
         </div>
       ) : (
         <div className="space-y-6">
           {pinnedNotes.length > 0 && (
             <div className="space-y-3">
-              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-0.5">
+              <div className="text-xs font-semibold uppercase tracking-wider text-white/75 px-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
                 {t.notePinnedHeading}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 items-start">
@@ -503,7 +501,7 @@ export function NotesDiaryView({
           {otherNotes.length > 0 && (
             <div className="space-y-3">
               {pinnedNotes.length > 0 && (
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-0.5">
+                <div className="text-xs font-semibold uppercase tracking-wider text-white/75 px-0.5 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
                   {t.noteOthersHeading}
                 </div>
               )}
@@ -518,15 +516,13 @@ export function NotesDiaryView({
       {/* Edit Note Modal */}
       {editingNote && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-[2px]"
           role="dialog"
           aria-modal="true"
         >
           <form
             onSubmit={handleEditSubmit}
-            className={`w-full max-w-lg rounded-2xl border p-5 space-y-4 shadow-xl ${getCardColorClass(
-              editColor
-            )}`}
+            className="w-full max-w-lg rounded-2xl border border-white/20 bg-slate-950/90 backdrop-blur-md p-5 space-y-4 shadow-2xl text-white"
           >
             <div className="flex items-center justify-between gap-2">
               <input
@@ -534,7 +530,7 @@ export function NotesDiaryView({
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 placeholder={t.noteTitlePlaceholder}
-                className="flex-1 bg-transparent text-base font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
+                className="flex-1 bg-transparent text-base font-semibold text-white placeholder:text-white/50 focus:outline-none"
               />
               <button
                 type="button"
@@ -542,8 +538,8 @@ export function NotesDiaryView({
                 title={editPinned ? t.noteUnpinAction : t.notePinAction}
                 className={`p-1.5 rounded-lg transition-colors ${
                   editPinned
-                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-600/10'
-                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    ? 'text-emerald-300 bg-emerald-500/20'
+                    : 'text-white/65 hover:text-white'
                 }`}
               >
                 {editPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
@@ -552,7 +548,7 @@ export function NotesDiaryView({
                 type="button"
                 onClick={() => setEditingNote(null)}
                 aria-label={t.close}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                className="p-1.5 rounded-lg text-white/65 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -564,10 +560,10 @@ export function NotesDiaryView({
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               placeholder={t.noteBodyPlaceholder}
-              className="w-full bg-transparent text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none resize-y leading-relaxed"
+              className="w-full bg-transparent text-sm text-white/90 placeholder:text-white/50 focus:outline-none resize-y leading-relaxed"
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-black/5 dark:border-white/10">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/15">
               <div className="flex items-center gap-1.5" aria-label={t.noteColorLabel}>
                 {NOTE_COLORS.map((c) => (
                   <button
@@ -579,7 +575,7 @@ export function NotesDiaryView({
                       c.swatchClass
                     } ${
                       editColor === c.id
-                        ? 'scale-110 ring-2 ring-emerald-600/40'
+                        ? 'scale-110 ring-2 ring-emerald-400/60'
                         : 'opacity-80 hover:opacity-100'
                     }`}
                   />
@@ -590,13 +586,13 @@ export function NotesDiaryView({
                 <button
                   type="button"
                   onClick={() => setEditingNote(null)}
-                  className="px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  className="px-3.5 py-1.5 rounded-lg border border-white/25 text-xs font-medium text-white/85 hover:bg-white/10 transition-colors"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
                 >
                   {t.noteSaveBtn}
                 </button>

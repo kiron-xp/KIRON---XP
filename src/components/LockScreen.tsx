@@ -182,7 +182,7 @@ export function LockScreen({
       {/* Password Lock Stack (Top area on site gate, centered on vault lock) */}
       <div
         className={`relative z-10 flex justify-center ${
-          isSiteGate ? 'items-start px-5 pt-1 sm:pt-3 shrink-0' : 'flex-1 items-center p-6 min-h-0'
+          isSiteGate ? 'items-start px-5 pt-0 sm:pt-2 shrink-0' : 'flex-1 items-center p-6 min-h-0'
         }`}
       >
         <div
@@ -337,11 +337,11 @@ export function LockScreen({
         </div>
       </div>
 
-      {/* Middle Centered 5-Column App Grid (equal horizontal & vertical spacing, crisp 4K/HD original logos) */}
+      {/* Higher Positioned Centered 5-Column App Grid with comfortable horizontal & vertical spacing */}
       {isSiteGate && (
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center py-3 px-4 sm:px-6 min-h-0">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-start pt-5 sm:pt-8 pb-2 px-4 sm:px-6 min-h-0">
           {showSocials && (
-            <div className="w-full max-w-[390px] sm:max-w-[440px] mx-auto grid grid-cols-5 gap-x-3.5 gap-y-3.5 min-[390px]:gap-x-4 min-[390px]:gap-y-4 sm:gap-x-6 sm:gap-y-6 justify-items-center">
+            <div className="w-full max-w-[420px] sm:max-w-[480px] mx-auto grid grid-cols-5 gap-x-4 gap-y-5 min-[390px]:gap-x-5 min-[390px]:gap-y-5 sm:gap-x-7 sm:gap-y-7 justify-items-center">
               {SOCIAL_APPS.map((app) => {
                 const action = resolveSocialAppAction(app.id, siteConfig);
                 const iconEl = (
