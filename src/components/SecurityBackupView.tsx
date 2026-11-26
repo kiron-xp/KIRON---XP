@@ -55,14 +55,6 @@ interface PendingMediaUpload {
 
 const APK_CATEGORIES = [
   'WHATSAPP',
-  'WHATSAPP BUSINESS',
-  'GB WHATSAPP',
-  'FM WHATSAPP',
-  'YO WHATSAPP',
-  'PLUS WHATSAPP',
-  'OG WHATSAPP',
-  'AN WHATSAPP',
-  'WHATSAPP AERO',
   'FACEBOOK',
   'FACEBOOK LITE',
   'MESSENGER',
@@ -79,8 +71,17 @@ const APK_CATEGORIES = [
   'DISCORD',
   'LINE',
   'VIBER',
+  'SIGNAL',
+  'BIP',
+  'LIKEE',
+  'CAPCUT',
   'SHAREIT',
   'GOOGLE',
+  'CHROME',
+  'GMAIL',
+  'PLAY STORE',
+  'BKASH',
+  'NAGAD',
   'OTHER',
 ] as const;
 
@@ -122,7 +123,7 @@ export function SecurityBackupView({
 }: SecurityBackupViewProps) {
   // Gallery & Media Vault state (upload panel opened via XP - 4 menu)
   const [uploadPanelOpen, setUploadPanelOpen] = useState(false);
-  const [filterKind, setFilterKind] = useState<ProfileMediaKind>('photo');
+  const [filterKind, setFilterKind] = useState<ProfileMediaKind>('apk');
   const [selectedApkCategory, setSelectedApkCategory] = useState<string>('ALL');
   const [pendingUpload, setPendingUpload] = useState<PendingMediaUpload | null>(null);
   const [numberFormOpen, setNumberFormOpen] = useState(false);
@@ -1086,11 +1087,11 @@ export function SecurityBackupView({
         <div className="flex flex-wrap items-center gap-1.5">
           {(
             [
+              ['apk', t.mediaFilterApk, counts.apk],
               ['photo', t.mediaFilterPhoto, counts.photo],
               ['video', t.mediaFilterVideo, counts.video],
               ['screenshot', t.mediaFilterScreenshot, counts.screenshot],
               ['number', t.mediaFilterNumber, counts.number],
-              ['apk', t.mediaFilterApk, counts.apk],
             ] as const
           ).map(([id, label, count]) => {
             const active = filterKind === id;
