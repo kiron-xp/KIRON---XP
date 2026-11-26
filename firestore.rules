@@ -256,7 +256,8 @@ service cloud.firestore {
         && incoming().id == existing().id
         && incoming().createdAt == existing().createdAt
         && incoming().diff(existing()).affectedKeys().hasOnly([
-          'title', 'category', 'numberValue', 'note', 'updatedAt'
+          'title', 'category', 'numberValue', 'note', 'thumbnailDataUrl',
+          'fileName', 'fileSize', 'dataUrl', 'chunkCount', 'mimeType', 'updatedAt'
         ]);
       allow delete: if isValidId(mediaId);
 

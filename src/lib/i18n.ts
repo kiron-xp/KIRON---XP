@@ -316,6 +316,9 @@ export interface Translations {
   mediaApkChangeThumbnailBtn: string;
   mediaApkRemoveThumbnailBtn: string;
   mediaConfirmUploadBtn: string;
+  mediaApkEditTitle: string;
+  mediaApkSaveEditBtn: string;
+  mediaApkReplaceFileBtn: string;
 }
 
 const bn: Translations = {
@@ -626,6 +629,9 @@ const bn: Translations = {
   mediaApkChangeThumbnailBtn: 'ছবি পরিবর্তন করুন',
   mediaApkRemoveThumbnailBtn: 'ছবি সরান',
   mediaConfirmUploadBtn: 'আপলোড ও সংরক্ষণ করুন',
+  mediaApkEditTitle: 'APK এডিট করুন',
+  mediaApkSaveEditBtn: 'আপডেট সেভ করুন',
+  mediaApkReplaceFileBtn: 'নতুন APK ফাইল পরিবর্তন (ঐচ্ছিক)',
 };
 
 const en: Translations = {
@@ -936,6 +942,9 @@ const en: Translations = {
   mediaApkChangeThumbnailBtn: 'Change Photo',
   mediaApkRemoveThumbnailBtn: 'Remove',
   mediaConfirmUploadBtn: 'Upload & Save',
+  mediaApkEditTitle: 'Edit APK',
+  mediaApkSaveEditBtn: 'Save Changes',
+  mediaApkReplaceFileBtn: 'Replace APK File (optional)',
 };
 
 export function getTranslations(lang: Language): Translations {

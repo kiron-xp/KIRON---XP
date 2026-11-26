@@ -4,6 +4,7 @@ import {
   Check,
   Copy,
   Download,
+  Edit3,
   Film,
   Hash,
   Image as ImageIcon,
@@ -34,6 +35,10 @@ interface SecurityBackupViewProps {
   onAddProfileMedia: (
     entry: ProfileMediaEntry,
     onProgress?: (pct: number) => void
+  ) => Promise<void>;
+  onUpdateProfileMedia?: (
+    entry: ProfileMediaEntry,
+    options?: { newFilePicked?: boolean; onProgress?: (pct: number) => void }
   ) => Promise<void>;
   onDeleteProfileMedia: (id: string) => Promise<void>;
 }
@@ -112,6 +117,7 @@ export function SecurityBackupView({
   profileMedia,
   openAddNonce = 0,
   onAddProfileMedia,
+  onUpdateProfileMedia,
   onDeleteProfileMedia,
 }: SecurityBackupViewProps) {
   // Gallery & Media Vault state (upload panel opened via XP - 4 menu)
@@ -130,8 +136,40 @@ export function SecurityBackupView({
   const [downloadingIds, setDownloadingIds] = useState<Record<string, boolean>>({});
 
   const [copiedMediaId, setCopiedMediaId] = useState<string | null>(null);
+  const [openApkMenuId, setOpenApkMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [lightboxItem, setLightboxItem] = useState<ProfileMediaEntry | null>(null);
+  const [editingApk, setEditingApk] = useState<{
+    item: ProfileMediaEntry;
+    title: string;
+    caption: string;
+    category: string;
+    thumbnailDataUrl?: string;
+    replacementFile?: File;
+  } | null>(null);
+  const [savingApkEdit, setSavingApkEdit] = useState(false);
+  const [editApkProgress, setEditApkProgress] = useState(0);
+  const [editApkError, setEditApkError] = useState('');
+
+  useEffect(() => {
+    const handlePointerDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target?.closest('[data-apk-menu]')) {
+        setOpenApkMenuId(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpenApkMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [loadingMediaIds, setLoadingMediaIds] = useState<Record<string, boolean>>({});
@@ -560,6 +598,118 @@ export function SecurityBackupView({
       setUploadError(t.importErrorToast);
     } finally {
       setDownloadingIds((prev) => ({ ...prev, [item.id]: false }));
+    }
+  };
+
+  const openEditApkModal = (item: ProfileMediaEntry) => {
+    const cleanTitle = stripBaseApkName(item.title);
+    setEditApkError('');
+    setEditApkProgress(0);
+    setEditingApk({
+      item,
+      title: cleanTitle || stripBaseApkName(item.fileName).replace(/\.apk$/i, '') || '',
+      caption: item.note ?? '',
+      category: item.category || 'WHATSAPP',
+      thumbnailDataUrl: item.thumbnailDataUrl,
+      replacementFile: undefined,
+    });
+  };
+
+  const handleEditApkThumbnail = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const imgFile = e.target.files?.[0];
+    e.target.value = '';
+    if (!imgFile) return;
+    setEditApkError('');
+    try {
+      const compressed = await compressImageForVault(imgFile, 800, 180000);
+      setEditingApk((prev) => (prev ? { ...prev, thumbnailDataUrl: compressed } : prev));
+    } catch {
+      setEditApkError(t.importErrorToast);
+    }
+  };
+
+  const handleEditApkReplacementFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > MAX_MEDIA_FILE_BYTES) {
+      setEditApkError(t.mediaVideoTooLarge);
+      return;
+    }
+    setEditApkError('');
+    setEditingApk((prev) => (prev ? { ...prev, replacementFile: file } : prev));
+  };
+
+  const handleSaveApkEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingApk || !onUpdateProfileMedia) return;
+    const { item, title, caption, category, thumbnailDataUrl, replacementFile } = editingApk;
+    const cleanTitle = stripBaseApkName(title.trim()) || category || 'Android App';
+    const cleanCaption = caption.trim().slice(0, 500) || undefined;
+    const selectedCategory = category || 'WHATSAPP';
+
+    setSavingApkEdit(true);
+    setEditApkError('');
+    setEditApkProgress(replacementFile ? 8 : 50);
+
+    try {
+      if (replacementFile) {
+        const rawDataUrl = await fileToBase64DataUrl(replacementFile);
+        const cleanRawName = stripBaseApkName(replacementFile.name).replace(/\.[^.]+$/, '');
+        const cleanBase = (cleanTitle || cleanRawName || selectedCategory || 'app')
+          .replace(/[^a-zA-Z0-9._ -]+/g, '')
+          .trim()
+          .replace(/\s+/g, '_');
+        const resolvedFileName = stripBaseApkName(replacementFile.name)
+          ? replacementFile.name.toLowerCase().endsWith('.apk')
+            ? replacementFile.name.slice(0, 200)
+            : `${replacementFile.name.slice(0, 195)}.apk`
+          : `${(cleanBase || 'app').slice(0, 195)}.apk`;
+
+        const updatedEntry: ProfileMediaEntry = {
+          ...item,
+          title: cleanTitle.slice(0, 160),
+          category: selectedCategory,
+          note: cleanCaption,
+          thumbnailDataUrl,
+          mimeType: 'application/vnd.android.package-archive',
+          fileName: resolvedFileName,
+          fileSize: replacementFile.size,
+          dataUrl: rawDataUrl,
+          chunkCount: 0,
+        };
+
+        if (rawDataUrl.length > 680000) {
+          const objUrl = URL.createObjectURL(replacementFile);
+          cacheProfileMediaObjectUrl(item.id, objUrl);
+          mediaUrlsRef.current[item.id] = objUrl;
+          setMediaUrls((prev) => ({ ...prev, [item.id]: objUrl }));
+        }
+
+        await onUpdateProfileMedia(updatedEntry, {
+          newFilePicked: true,
+          onProgress: (pct) => setEditApkProgress(pct),
+        });
+      } else {
+        const updatedEntry: ProfileMediaEntry = {
+          ...item,
+          title: cleanTitle.slice(0, 160),
+          category: selectedCategory,
+          note: cleanCaption,
+          thumbnailDataUrl,
+        };
+        await onUpdateProfileMedia(updatedEntry, { newFilePicked: false });
+      }
+      setEditingApk(null);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'VIDEO_TOO_LARGE') {
+        setEditApkError(t.mediaVideoTooLarge);
+      } else {
+        setEditApkError(t.importErrorToast);
+      }
+    } finally {
+      setSavingApkEdit(false);
+      setEditApkProgress(0);
     }
   };
 
@@ -1006,7 +1156,7 @@ export function SecurityBackupView({
             </p>
           </div>
         ) : filterKind === 'apk' ? (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs overflow-hidden">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
             {visibleApkItems.map((item) => {
               const isConfirming = confirmDeleteId === item.id;
               const isDownloading = Boolean(downloadingIds[item.id]);
@@ -1014,11 +1164,12 @@ export function SecurityBackupView({
               const cleanFile = stripBaseApkName(item.fileName).replace(/\.apk$/i, '').trim();
               const apkDisplayName =
                 cleanTitle || cleanFile || item.category || 'Android App';
+              const apkCategoryLine = item.category ? `${item.category} - APK` : 'APK';
 
               return (
                 <div key={item.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
                   <div className="flex items-center justify-between gap-3 sm:gap-5">
-                    {/* Left: Gallery Photo + Center Info (MD KIRON MONDAL -> APK Name -> Caption -> APK - CATEGORY) */}
+                    {/* Left: Gallery Photo + Center Info (MD KIRON MONDAL -> CATEGORY - APK -> Title -> Caption) */}
                     <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
                       {item.thumbnailDataUrl ? (
                         <button
@@ -1046,18 +1197,66 @@ export function SecurityBackupView({
                           <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
                             MD KIRON MONDAL
                           </h3>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setConfirmDeleteId(isConfirming ? null : item.id)
-                            }
-                            title={t.deleteAccount}
-                            aria-label={t.deleteAccount}
-                            className="p-1 rounded-md text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors shrink-0"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                          <div className="relative shrink-0" data-apk-menu>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOpenApkMenuId((prev) => (prev === item.id ? null : item.id))
+                              }
+                              aria-expanded={openApkMenuId === item.id}
+                              aria-haspopup="menu"
+                              title={t.editAccount}
+                              aria-label={t.editAccount}
+                              className={`inline-flex items-center justify-center p-0.5 rounded transition-colors ${
+                                openApkMenuId === item.id
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : 'text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
+                              }`}
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+
+                            {openApkMenuId === item.id && (
+                              <div
+                                role="menu"
+                                className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-slate-950/95 backdrop-blur-md shadow-2xl py-1.5 z-40"
+                              >
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setOpenApkMenuId(null);
+                                    openEditApkModal(item);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-white/10 text-left transition-colors whitespace-nowrap"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 text-slate-400 dark:text-white/60 shrink-0" />
+                                  <span>{t.editAccount}</span>
+                                </button>
+
+                                <div className="my-1 border-t border-slate-200 dark:border-white/15" />
+
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setOpenApkMenuId(null);
+                                    setConfirmDeleteId(isConfirming ? null : item.id);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 text-left transition-colors whitespace-nowrap"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                  <span>{t.deleteAccount}</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
+
+                        <p className="text-[11px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-300 tracking-wide">
+                          {apkCategoryLine}
+                        </p>
 
                         <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 break-words">
                           {apkDisplayName}
@@ -1066,12 +1265,6 @@ export function SecurityBackupView({
                         {item.note && (
                           <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
                             {item.note}
-                          </p>
-                        )}
-
-                        {item.category && (
-                          <p className="pt-0.5 text-[11px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-300 tracking-wide">
-                            APK - {item.category}
                           </p>
                         )}
                       </div>
@@ -1430,6 +1623,214 @@ export function SecurityBackupView({
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Edit APK Modal (Category, Photo, Title, Caption, or Optional File Replace) */}
+      {editingApk && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs"
+          onClick={() => {
+            if (!savingApkEdit) setEditingApk(null);
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <form
+            onSubmit={handleSaveApkEdit}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-2xl"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{t.mediaApkEditTitle}</span>
+              </h3>
+              <button
+                type="button"
+                disabled={savingApkEdit}
+                onClick={() => setEditingApk(null)}
+                aria-label={t.close}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Category Selector */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {t.categoryLabel}
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-44 overflow-y-auto pr-1">
+                {APK_CATEGORIES.map((cat) => {
+                  const active = editingApk.category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      disabled={savingApkEdit}
+                      onClick={() =>
+                        setEditingApk((prev) => (prev ? { ...prev, category: cat } : prev))
+                      }
+                      className={`px-2.5 py-1.5 rounded-lg border text-center text-[11px] font-semibold tracking-wide transition-colors truncate ${
+                        active
+                          ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Gallery Thumbnail */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {t.mediaApkThumbnailLabel}
+              </label>
+              <div className="flex items-center gap-3">
+                {editingApk.thumbnailDataUrl ? (
+                  <img
+                    src={editingApk.thumbnailDataUrl}
+                    alt={editingApk.title || 'APK'}
+                    className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-300 flex items-center justify-center shrink-0">
+                    <Package className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors">
+                    <ImageIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>
+                      {editingApk.thumbnailDataUrl
+                        ? t.mediaApkChangeThumbnailBtn
+                        : t.mediaApkPickThumbnailBtn}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={savingApkEdit}
+                      onChange={handleEditApkThumbnail}
+                      className="sr-only"
+                    />
+                  </label>
+                  {editingApk.thumbnailDataUrl && (
+                    <button
+                      type="button"
+                      disabled={savingApkEdit}
+                      onClick={() =>
+                        setEditingApk((prev) =>
+                          prev ? { ...prev, thumbnailDataUrl: undefined } : prev
+                        )
+                      }
+                      className="px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                    >
+                      {t.mediaApkRemoveThumbnailBtn}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {t.mediaUploadTitleLabel}
+              </label>
+              <input
+                type="text"
+                value={editingApk.title}
+                disabled={savingApkEdit}
+                onChange={(e) =>
+                  setEditingApk((prev) => (prev ? { ...prev, title: e.target.value } : prev))
+                }
+                placeholder={t.mediaUploadTitlePlaceholder}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Caption */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {t.mediaUploadCaptionLabel}
+              </label>
+              <textarea
+                rows={2}
+                value={editingApk.caption}
+                disabled={savingApkEdit}
+                onChange={(e) =>
+                  setEditingApk((prev) => (prev ? { ...prev, caption: e.target.value } : prev))
+                }
+                placeholder={t.mediaUploadCaptionPlaceholder}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 resize-none"
+              />
+            </div>
+
+            {/* Optional Replace APK Binary */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors">
+                <Package className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>{t.mediaApkReplaceFileBtn}</span>
+                <input
+                  type="file"
+                  disabled={savingApkEdit}
+                  onChange={handleEditApkReplacementFile}
+                  className="sr-only"
+                />
+              </label>
+              {editingApk.replacementFile && (
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  {formatFileSize(editingApk.replacementFile.size)}
+                </span>
+              )}
+            </div>
+
+            {savingApkEdit && editApkProgress > 0 && editingApk.replacementFile && (
+              <div className="space-y-1 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                <div className="flex items-center justify-between text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                  <span>{t.mediaUploadingLabel}</span>
+                  <span className="tabular-nums">{editApkProgress}%</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-emerald-200 dark:bg-emerald-900 overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600 transition-all duration-200"
+                    style={{ width: `${Math.max(8, editApkProgress)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {editApkError && (
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{editApkError}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={savingApkEdit}
+                onClick={() => setEditingApk(null)}
+                className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="submit"
+                disabled={savingApkEdit}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
+              >
+                {savingApkEdit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{t.mediaApkSaveEditBtn}</span>
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

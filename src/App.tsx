@@ -39,6 +39,7 @@ import {
   saveSiteEntryConfig,
   subscribeToSharedVault,
   subscribeToSiteEntryConfig,
+  updateProfileMediaDoc,
   upsertAccountDoc,
   upsertEmailDoc,
   upsertNoteDoc,
@@ -503,6 +504,21 @@ export default function App() {
     showToast(t.mediaSavedToast);
   };
 
+  const handleUpdateProfileMedia = async (
+    entry: ProfileMediaEntry,
+    options?: { newFilePicked?: boolean; onProgress?: (pct: number) => void }
+  ) => {
+    const saved = await updateProfileMediaDoc(entry, options);
+    setVault((prev) => ({
+      ...prev,
+      profileMedia: (prev.profileMedia ?? []).map((item) =>
+        item.id === saved.id ? saved : item
+      ),
+      updatedAt: Date.now(),
+    }));
+    showToast(t.mediaSavedToast);
+  };
+
   const handleDeleteProfileMedia = async (id: string) => {
     setVault((prev) => ({
       ...prev,
@@ -955,6 +971,7 @@ export default function App() {
               profileMedia={vault.profileMedia ?? []}
               openAddNonce={mediaAddNonce}
               onAddProfileMedia={handleAddProfileMedia}
+              onUpdateProfileMedia={handleUpdateProfileMedia}
               onDeleteProfileMedia={handleDeleteProfileMedia}
             />
           )}

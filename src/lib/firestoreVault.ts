@@ -1,6 +1,7 @@
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDocs,
   onSnapshot,
@@ -8,6 +9,7 @@ import {
   query,
   setDoc,
   Unsubscribe,
+  updateDoc,
   where,
 } from 'firebase/firestore';
 import {
@@ -596,6 +598,70 @@ export async function deleteProfileMediaDoc(id: string): Promise<void> {
     await deleteDoc(doc(db, PROFILE_MEDIA_PATH, docId));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function updateProfileMediaDoc(
+  updatedEntry: ProfileMediaEntry,
+  options?: { newFilePicked?: boolean; onProgress?: (pct: number) => void }
+): Promise<ProfileMediaEntry> {
+  const docId = sanitizeDocId(updatedEntry.id);
+  const path = `${PROFILE_MEDIA_PATH}/${docId}`;
+  const now = Date.now();
+
+  if (options?.newFilePicked) {
+    const cached = mediaObjectUrlCache.get(docId);
+    if (cached && cached.startsWith('blob:')) {
+      URL.revokeObjectURL(cached);
+    }
+    mediaObjectUrlCache.delete(docId);
+    try {
+      const chunkSnap = await getDocs(
+        query(collection(db, PROFILE_MEDIA_PATH, docId, 'chunks'), where('index', '>=', 0))
+      );
+      if (!chunkSnap.empty) {
+        await Promise.all(
+          chunkSnap.docs.map((c) => deleteDoc(doc(db, PROFILE_MEDIA_PATH, docId, 'chunks', c.id)))
+        );
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `${path}/chunks`);
+    }
+    return saveProfileMediaDoc({ ...updatedEntry, id: docId, updatedAt: now }, options.onProgress);
+  }
+
+  const cleanTitle = String(updatedEntry.title ?? '').trim().slice(0, 160);
+  const cleanCategory = updatedEntry.category?.trim().slice(0, 60);
+  const cleanNote = updatedEntry.note?.trim().slice(0, 500);
+  const validThumb =
+    typeof updatedEntry.thumbnailDataUrl === 'string' &&
+    updatedEntry.thumbnailDataUrl.length > 0 &&
+    updatedEntry.thumbnailDataUrl.length <= 200000
+      ? updatedEntry.thumbnailDataUrl
+      : undefined;
+
+  const patch: Record<string, unknown> = {
+    title: cleanTitle,
+    category: cleanCategory ? cleanCategory : deleteField(),
+    note: cleanNote ? cleanNote : deleteField(),
+    thumbnailDataUrl: validThumb ? validThumb : deleteField(),
+    updatedAt: now,
+  };
+
+  try {
+    await updateDoc(doc(db, PROFILE_MEDIA_PATH, docId), patch);
+    options?.onProgress?.(100);
+    return {
+      ...updatedEntry,
+      id: docId,
+      title: cleanTitle,
+      category: cleanCategory || undefined,
+      note: cleanNote || undefined,
+      thumbnailDataUrl: validThumb,
+      updatedAt: now,
+    };
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
 
