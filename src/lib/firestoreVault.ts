@@ -86,11 +86,11 @@ function cacheSiteEntryConfig(config: SiteEntryConfig): void {
 }
 
 const VALID_COLORS: NoteColor[] = ['default', 'emerald', 'amber', 'sky', 'rose', 'violet'];
-const VALID_MEDIA_KINDS: ProfileMediaKind[] = ['photo', 'screenshot', 'video', 'number'];
+const VALID_MEDIA_KINDS: ProfileMediaKind[] = ['photo', 'screenshot', 'video', 'number', 'apk'];
 const CHUNK_CHAR_SIZE = 760000;
 const INLINE_MEDIA_MAX_CHARS = 680000;
-export const MAX_MEDIA_CHUNKS = 80;
-export const MAX_MEDIA_FILE_BYTES = 40 * 1024 * 1024;
+export const MAX_MEDIA_CHUNKS = 200;
+export const MAX_MEDIA_FILE_BYTES = 100 * 1024 * 1024;
 export const MAX_VIDEO_CHUNKS = MAX_MEDIA_CHUNKS;
 export const MAX_VIDEO_FILE_BYTES = MAX_MEDIA_FILE_BYTES;
 
@@ -446,10 +446,17 @@ function cleanProfileMediaPayload(
     Number.isFinite(entry.fileSize) &&
     entry.fileSize >= 0
   ) {
-    payload.fileSize = Math.min(50000000, Math.floor(entry.fileSize));
+    payload.fileSize = Math.min(105000000, Math.floor(entry.fileSize));
   }
   if (inlineDataUrl.length > 0 && inlineDataUrl.length <= 750000) {
     payload.dataUrl = inlineDataUrl;
+  }
+  if (
+    typeof entry.thumbnailDataUrl === 'string' &&
+    entry.thumbnailDataUrl.length > 0 &&
+    entry.thumbnailDataUrl.length <= 200000
+  ) {
+    payload.thumbnailDataUrl = entry.thumbnailDataUrl;
   }
 
   return payload;

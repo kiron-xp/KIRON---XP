@@ -207,7 +207,7 @@
     },
     "ProfileMediaEntry": {
       "title": "ProfileMediaEntry",
-      "description": "A photo, screenshot, video, or saved number entry in the PROFILE gallery vault.",
+      "description": "A photo, screenshot, video, saved number, or APK app package entry in the PROFILE vault.",
       "type": "object",
       "properties": {
         "id": {
@@ -218,7 +218,7 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["photo", "screenshot", "video", "number"]
+          "enum": ["photo", "screenshot", "video", "number", "apk"]
         },
         "title": {
           "type": "string",
@@ -246,6 +246,10 @@
         "dataUrl": {
           "type": "string",
           "maxLength": 750000
+        },
+        "thumbnailDataUrl": {
+          "type": "string",
+          "maxLength": 200000
         },
         "chunkCount": {
           "type": "number"

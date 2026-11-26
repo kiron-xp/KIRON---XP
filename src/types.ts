@@ -57,7 +57,7 @@ export interface SheetEntry {
   updatedAt: number;
 }
 
-export type ProfileMediaKind = 'photo' | 'screenshot' | 'video' | 'number';
+export type ProfileMediaKind = 'photo' | 'screenshot' | 'video' | 'number' | 'apk';
 
 export interface ProfileMediaEntry {
   id: string;
@@ -69,6 +69,7 @@ export interface ProfileMediaEntry {
   fileName?: string;
   fileSize?: number;
   dataUrl?: string;
+  thumbnailDataUrl?: string;
   chunkCount: number;
   createdAt: number;
   updatedAt: number;

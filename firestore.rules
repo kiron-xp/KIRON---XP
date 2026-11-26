@@ -101,18 +101,19 @@ service cloud.firestore {
         ])
         && data.keys().hasOnly([
           'id', 'kind', 'title', 'numberValue', 'note', 'mimeType',
-          'fileName', 'fileSize', 'dataUrl', 'chunkCount', 'createdAt', 'updatedAt'
+          'fileName', 'fileSize', 'dataUrl', 'thumbnailDataUrl', 'chunkCount', 'createdAt', 'updatedAt'
         ])
         && data.id == mediaId
-        && data.kind in ['photo', 'screenshot', 'video', 'number']
+        && data.kind in ['photo', 'screenshot', 'video', 'number', 'apk']
         && data.title is string && data.title.size() <= 160
         && isValidOptionalString(data, 'numberValue', 120)
         && isValidOptionalString(data, 'note', 500)
         && data.mimeType is string && data.mimeType.size() <= 100
         && isValidOptionalString(data, 'fileName', 200)
-        && (!('fileSize' in data) || (data.fileSize is number && data.fileSize >= 0 && data.fileSize <= 50000000))
+        && (!('fileSize' in data) || (data.fileSize is number && data.fileSize >= 0 && data.fileSize <= 105000000))
         && isValidOptionalString(data, 'dataUrl', 750000)
-        && data.chunkCount is number && data.chunkCount >= 0 && data.chunkCount <= 80
+        && isValidOptionalString(data, 'thumbnailDataUrl', 200000)
+        && data.chunkCount is number && data.chunkCount >= 0 && data.chunkCount <= 200
         && data.createdAt is number && data.createdAt > 0
         && data.updatedAt is number && data.updatedAt >= data.createdAt;
     }
@@ -122,7 +123,7 @@ service cloud.firestore {
         && data.keys().hasOnly(['id', 'mediaId', 'index', 'data'])
         && data.id == chunkId
         && data.mediaId == mediaId
-        && data.index is number && data.index >= 0 && data.index < 80
+        && data.index is number && data.index >= 0 && data.index < 200
         && data.data is string && data.data.size() >= 1 && data.data.size() <= 780000;
     }
 

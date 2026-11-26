@@ -9,7 +9,9 @@ import {
   Image as ImageIcon,
   Loader2,
   Maximize2,
+  Package,
   Play,
+  Plus,
   Sparkles,
   Trash2,
   Upload,
@@ -38,11 +40,12 @@ interface SecurityBackupViewProps {
 }
 
 interface PendingMediaUpload {
-  kind: 'photo' | 'screenshot' | 'video';
+  kind: 'photo' | 'screenshot' | 'video' | 'apk';
   files: File[];
   title: string;
   caption: string;
   previewUrl?: string;
+  thumbnailDataUrl?: string;
 }
 
 function formatFileSize(bytes?: number): string {
@@ -84,6 +87,7 @@ export function SecurityBackupView({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState('');
+  const [downloadingIds, setDownloadingIds] = useState<Record<string, boolean>>({});
 
   const [copiedMediaId, setCopiedMediaId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -129,16 +133,18 @@ export function SecurityBackupView({
     let screenshot = 0;
     let video = 0;
     let number = 0;
+    let apk = 0;
     for (const item of profileMedia) {
       if (item.kind === 'photo') photo += 1;
       else if (item.kind === 'screenshot') screenshot += 1;
       else if (item.kind === 'video') video += 1;
       else if (item.kind === 'number') number += 1;
+      else if (item.kind === 'apk') apk += 1;
     }
-    return { photo, screenshot, video, number };
+    return { photo, screenshot, video, number, apk };
   }, [profileMedia]);
 
-  // Strictly isolated per-category list: PHOTO, VIDEO, KIRON, NUMBER never mix together
+  // Strictly isolated per-category list: PHOTO, VIDEO, KIRON, NUMBER, APK never mix together
   const categoryItems = useMemo(() => {
     const seen = new Set<string>();
     const list: ProfileMediaEntry[] = [];
@@ -151,10 +157,12 @@ export function SecurityBackupView({
     return list.sort((a, b) => b.createdAt - a.createdAt);
   }, [profileMedia, filterKind]);
 
-  // Auto-load chunked photos & videos in active category (with persistent module blob cache)
+  // Auto-load chunked photos & videos in active category (skip APK chunks until user taps Download)
   useEffect(() => {
     const targets = categoryItems.filter((item) => {
-      if (item.kind === 'number' || item.dataUrl || item.chunkCount <= 0) return false;
+      if (item.kind === 'number' || item.kind === 'apk' || item.dataUrl || item.chunkCount <= 0) {
+        return false;
+      }
       const existing = mediaUrlsRef.current[item.id] || getCachedProfileMediaObjectUrl(item.id);
       if (existing) {
         if (!mediaUrlsRef.current[item.id]) {
@@ -199,7 +207,7 @@ export function SecurityBackupView({
 
   const handleSelectFilesForComposer = (
     e: React.ChangeEvent<HTMLInputElement>,
-    kind: 'photo' | 'screenshot' | 'video'
+    kind: 'photo' | 'screenshot' | 'video' | 'apk'
   ) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
@@ -215,14 +223,54 @@ export function SecurityBackupView({
 
     setNumberFormOpen(false);
     clearPendingUpload();
+    setUploadPanelOpen(true);
     const previewUrl =
-      kind !== 'video' ? URL.createObjectURL(files[0]) : undefined;
+      kind === 'photo' || kind === 'screenshot' ? URL.createObjectURL(files[0]) : undefined;
     setPendingUpload({
       kind,
       files,
       title: '',
       caption: '',
       previewUrl,
+      thumbnailDataUrl: undefined,
+    });
+  };
+
+  const handleSelectApkThumbnail = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const imgFile = e.target.files?.[0];
+    e.target.value = '';
+    if (!imgFile) return;
+
+    setUploadError('');
+    try {
+      const compressed = await compressImageForVault(imgFile, 800, 180000);
+      setPendingUpload((prev) => {
+        if (!prev || prev.kind !== 'apk') return prev;
+        if (prev.previewUrl && prev.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(prev.previewUrl);
+        }
+        return {
+          ...prev,
+          thumbnailDataUrl: compressed,
+          previewUrl: compressed,
+        };
+      });
+    } catch {
+      setUploadError(t.importErrorToast);
+    }
+  };
+
+  const handleRemoveApkThumbnail = () => {
+    setPendingUpload((prev) => {
+      if (!prev || prev.kind !== 'apk') return prev;
+      if (prev.previewUrl && prev.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(prev.previewUrl);
+      }
+      return {
+        ...prev,
+        thumbnailDataUrl: undefined,
+        previewUrl: undefined,
+      };
     });
   };
 
@@ -230,7 +278,7 @@ export function SecurityBackupView({
     e.preventDefault();
     if (!pendingUpload || pendingUpload.files.length === 0) return;
 
-    const { kind, files, title, caption } = pendingUpload;
+    const { kind, files, title, caption, thumbnailDataUrl } = pendingUpload;
     const customTitle = title.trim();
     const customCaption = caption.trim().slice(0, 500) || undefined;
 
@@ -247,7 +295,7 @@ export function SecurityBackupView({
 
       const uploadSingleFile = async (file: File, i: number) => {
         let rawDataUrl: string;
-        if (kind !== 'video' && file.size > 460000) {
+        if ((kind === 'photo' || kind === 'screenshot') && file.size > 460000) {
           try {
             // Fast HD optimization (~2048px WebP) so photos save in a single instant Firestore write
             rawDataUrl = await compressImageForVault(file, 2048, 680000);
@@ -263,28 +311,42 @@ export function SecurityBackupView({
           crypto.randomUUID ? crypto.randomUUID() : `${kind}-${now}-${i}`
         );
         const fallbackTitle =
-          file.name.replace(/\.[^.]+$/, '') || (kind === 'video' ? 'Video' : kind.toUpperCase());
+          file.name.replace(/\.[^.]+$/, '') ||
+          (kind === 'video' ? 'Video' : kind === 'apk' ? 'App' : kind.toUpperCase());
         const resolvedTitle = customTitle
           ? files.length > 1
             ? `${customTitle} (${i + 1})`.slice(0, 160)
             : customTitle.slice(0, 160)
           : fallbackTitle.slice(0, 160);
 
+        const resolvedFileName =
+          kind === 'apk'
+            ? file.name.toLowerCase().endsWith('.apk')
+              ? file.name.slice(0, 200)
+              : `${file.name.slice(0, 195)}.apk`
+            : file.name.slice(0, 200);
+
+        const resolvedMimeType =
+          kind === 'apk'
+            ? 'application/vnd.android.package-archive'
+            : file.type || (kind === 'video' ? 'video/mp4' : 'image/jpeg');
+
         const entry: ProfileMediaEntry = {
           id,
           kind,
           title: resolvedTitle,
           note: customCaption,
-          mimeType: file.type || (kind === 'video' ? 'video/mp4' : 'image/jpeg'),
-          fileName: file.name.slice(0, 200),
+          mimeType: resolvedMimeType,
+          fileName: resolvedFileName,
           fileSize: file.size,
           dataUrl: rawDataUrl,
+          thumbnailDataUrl: kind === 'apk' ? thumbnailDataUrl : undefined,
           chunkCount: 0,
           createdAt: now,
           updatedAt: now,
         };
 
-        // Immediately cache local object URL so large photos & videos display/play with zero delay
+        // Cache local object URL so large files download/play instantly without re-fetching chunks
         if (rawDataUrl.length > 680000) {
           const objUrl = URL.createObjectURL(file);
           cacheProfileMediaObjectUrl(id, objUrl);
@@ -388,39 +450,53 @@ export function SecurityBackupView({
   };
 
   const handleDownloadMedia = async (item: ProfileMediaEntry) => {
-    let href = item.dataUrl ?? mediaUrls[item.id];
-    if (!href && item.chunkCount > 0) {
-      try {
+    if (downloadingIds[item.id]) return;
+    setDownloadingIds((prev) => ({ ...prev, [item.id]: true }));
+    try {
+      let href =
+        item.dataUrl ?? mediaUrls[item.id] ?? getCachedProfileMediaObjectUrl(item.id);
+      if (!href && item.chunkCount > 0) {
         href = await loadProfileMediaObjectUrl(item);
         mediaUrlsRef.current[item.id] = href;
         setMediaUrls((prev) => ({ ...prev, [item.id]: href! }));
-      } catch {
-        return;
       }
+      if (!href) return;
+      const a = document.createElement('a');
+      a.href = href;
+      const baseName = item.fileName || `${item.title || item.kind}-${item.id}`;
+      a.download =
+        item.kind === 'apk' && !baseName.toLowerCase().endsWith('.apk')
+          ? `${baseName}.apk`
+          : baseName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      setUploadError(t.importErrorToast);
+    } finally {
+      setDownloadingIds((prev) => ({ ...prev, [item.id]: false }));
     }
-    if (!href) return;
-    const a = document.createElement('a');
-    a.href = href;
-    a.download = item.fileName || `${item.title || item.kind}-${item.id}`;
-    a.click();
   };
 
   const getKindBadgeLabel = (kind: ProfileMediaKind): string => {
     if (kind === 'photo') return t.mediaFilterPhoto;
     if (kind === 'video') return t.mediaFilterVideo;
     if (kind === 'screenshot') return t.mediaFilterScreenshot;
+    if (kind === 'apk') return t.mediaFilterApk;
     return t.mediaFilterNumber;
   };
 
   const lightboxMediaSrc = lightboxItem
-    ? lightboxItem.dataUrl ||
-      mediaUrls[lightboxItem.id] ||
-      getCachedProfileMediaObjectUrl(lightboxItem.id)
+    ? lightboxItem.kind === 'apk'
+      ? lightboxItem.thumbnailDataUrl
+      : lightboxItem.dataUrl ||
+        mediaUrls[lightboxItem.id] ||
+        getCachedProfileMediaObjectUrl(lightboxItem.id)
     : undefined;
 
   return (
     <div className="space-y-6">
-      {/* Upload Panel (only shown when triggered via Hamburger Menu -> XP - 4) */}
+      {/* Upload Panel (shown via Hamburger Menu -> XP - 4 or + APK) */}
       {uploadPanelOpen && (
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 space-y-4 shadow-xs">
           <div className="flex items-center justify-between gap-3">
@@ -442,7 +518,7 @@ export function SecurityBackupView({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
             <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
               <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{t.mediaUploadPhotoBtn}</span>
@@ -498,6 +574,17 @@ export function SecurityBackupView({
               <Hash className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>{t.mediaAddNumberBtn}</span>
             </button>
+
+            <label className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-300 dark:hover:border-teal-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
+              <Package className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span>{t.mediaUploadApkBtn}</span>
+              <input
+                type="file"
+                disabled={uploading}
+                onChange={(e) => handleSelectFilesForComposer(e, 'apk')}
+                className="sr-only"
+              />
+            </label>
           </div>
 
           {pendingUpload && (
@@ -512,6 +599,10 @@ export function SecurityBackupView({
                     alt={pendingUpload.files[0]?.name}
                     className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                   />
+                ) : pendingUpload.kind === 'apk' ? (
+                  <div className="w-14 h-14 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-300 flex items-center justify-center shrink-0">
+                    <Package className="w-6 h-6" />
+                  </div>
                 ) : (
                   <div className="w-14 h-14 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 flex items-center justify-center shrink-0">
                     <Film className="w-6 h-6" />
@@ -535,6 +626,41 @@ export function SecurityBackupView({
                   </p>
                 </div>
               </div>
+
+              {pendingUpload.kind === 'apk' && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    {t.mediaApkThumbnailLabel}
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors">
+                      <ImageIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>
+                        {pendingUpload.thumbnailDataUrl
+                          ? t.mediaApkChangeThumbnailBtn
+                          : t.mediaApkPickThumbnailBtn}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploading}
+                        onChange={handleSelectApkThumbnail}
+                        className="sr-only"
+                      />
+                    </label>
+                    {pendingUpload.thumbnailDataUrl && (
+                      <button
+                        type="button"
+                        disabled={uploading}
+                        onClick={handleRemoveApkThumbnail}
+                        className="px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                      >
+                        {t.mediaApkRemoveThumbnailBtn}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
@@ -685,48 +811,79 @@ export function SecurityBackupView({
 
       {/* Strictly Separated Category Sections */}
       <section className="space-y-5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(
-            [
-              ['photo', t.mediaFilterPhoto, counts.photo],
-              ['video', t.mediaFilterVideo, counts.video],
-              ['screenshot', t.mediaFilterScreenshot, counts.screenshot],
-              ['number', t.mediaFilterNumber, counts.number],
-            ] as const
-          ).map(([id, label, count]) => {
-            const active = filterKind === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setFilterKind(id)}
-                className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors whitespace-nowrap ${
-                  active
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                {label} ({count})
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(
+              [
+                ['photo', t.mediaFilterPhoto, counts.photo],
+                ['video', t.mediaFilterVideo, counts.video],
+                ['screenshot', t.mediaFilterScreenshot, counts.screenshot],
+                ['number', t.mediaFilterNumber, counts.number],
+                ['apk', t.mediaFilterApk, counts.apk],
+              ] as const
+            ).map(([id, label, count]) => {
+              const active = filterKind === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setFilterKind(id)}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors whitespace-nowrap ${
+                    active
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {label} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {filterKind === 'apk' && (
+            <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs whitespace-nowrap">
+              <Plus className="w-3.5 h-3.5" />
+              <span>{t.mediaUploadApkBtn}</span>
+              <input
+                type="file"
+                disabled={uploading}
+                onChange={(e) => handleSelectFilesForComposer(e, 'apk')}
+                className="sr-only"
+              />
+            </label>
+          )}
         </div>
 
         {/* Category Content */}
         {categoryItems.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-2 shadow-xs">
+          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-3 shadow-xs">
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               {t.mediaEmptyTitle}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
               {t.mediaEmptyDesc}
             </p>
+            {filterKind === 'apk' && (
+              <div className="pt-1">
+                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer transition-colors">
+                  <Package className="w-4 h-4" />
+                  <span>{t.mediaUploadApkBtn}</span>
+                  <input
+                    type="file"
+                    disabled={uploading}
+                    onChange={(e) => handleSelectFilesForComposer(e, 'apk')}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
             {categoryItems.map((item) => {
               const isConfirming = confirmDeleteId === item.id;
               const isCopied = copiedMediaId === item.id;
+              const isDownloading = Boolean(downloadingIds[item.id]);
               const resolvedSrc =
                 item.dataUrl || mediaUrls[item.id] || getCachedProfileMediaObjectUrl(item.id);
               const isLoadingMedia = Boolean(loadingMediaIds[item.id]);
@@ -760,6 +917,46 @@ export function SecurityBackupView({
                         {getKindBadgeLabel(item.kind)}
                       </span>
                       {resolvedSrc && (
+                        <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
+                          <Maximize2 className="w-3.5 h-3.5" />
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* APK Preview (Gallery photo if attached, otherwise crisp APK emblem) */}
+                  {item.kind === 'apk' && (
+                    <div
+                      onClick={() => {
+                        if (item.thumbnailDataUrl) setLightboxItem(item);
+                      }}
+                      className={`relative min-h-[140px] flex items-center justify-center overflow-hidden ${
+                        item.thumbnailDataUrl
+                          ? 'bg-slate-950 cursor-pointer group'
+                          : 'bg-gradient-to-br from-teal-50 to-emerald-100 dark:from-teal-950/50 dark:to-slate-900 py-8'
+                      }`}
+                    >
+                      {item.thumbnailDataUrl ? (
+                        <img
+                          src={item.thumbnailDataUrl}
+                          alt={item.title || 'APK'}
+                          loading="lazy"
+                          className="w-full h-auto max-h-[420px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.01]"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1.5 text-teal-700 dark:text-teal-300">
+                          <div className="w-12 h-12 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-teal-200 dark:border-teal-700 flex items-center justify-center shadow-xs">
+                            <Package className="w-6 h-6" />
+                          </div>
+                          <span className="text-[11px] font-mono font-semibold opacity-80">
+                            .apk
+                          </span>
+                        </div>
+                      )}
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-teal-700/90 text-white text-[10px] font-semibold">
+                        {getKindBadgeLabel('apk')}
+                      </span>
+                      {item.thumbnailDataUrl && (
                         <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
                           <Maximize2 className="w-3.5 h-3.5" />
                         </span>
@@ -848,6 +1045,11 @@ export function SecurityBackupView({
                             {formatFileSize(item.fileSize)}
                           </span>
                         </div>
+                        {item.kind === 'apk' && item.fileName && (
+                          <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                            {item.fileName}
+                          </p>
+                        )}
                         {item.note && (
                           <p className="text-xs text-slate-600 dark:text-slate-400 break-words leading-relaxed">
                             {item.note}
@@ -886,12 +1088,17 @@ export function SecurityBackupView({
                         ) : (
                           <button
                             type="button"
+                            disabled={isDownloading}
                             onClick={() => handleDownloadMedia(item)}
                             title={t.mediaDownloadBtn}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-[11px] font-medium text-slate-700 dark:text-slate-200 transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-60 text-[11px] font-medium text-slate-700 dark:text-slate-200 transition-colors"
                           >
-                            <Download className="w-3 h-3" />
-                            <span>{t.mediaDownloadBtn}</span>
+                            {isDownloading ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Download className="w-3 h-3" />
+                            )}
+                            <span>{isDownloading ? t.mediaDownloadingApk : t.mediaDownloadBtn}</span>
                           </button>
                         )}
 
@@ -968,11 +1175,20 @@ export function SecurityBackupView({
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
+                  disabled={Boolean(downloadingIds[lightboxItem.id])}
                   onClick={() => handleDownloadMedia(lightboxItem)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{t.mediaDownloadBtn}</span>
+                  {downloadingIds[lightboxItem.id] ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  <span>
+                    {downloadingIds[lightboxItem.id]
+                      ? t.mediaDownloadingApk
+                      : t.mediaDownloadBtn}
+                  </span>
                 </button>
                 <button
                   type="button"

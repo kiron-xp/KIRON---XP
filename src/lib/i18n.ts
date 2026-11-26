@@ -279,11 +279,13 @@ export interface Translations {
   mediaUploadScreenshotBtn: string;
   mediaUploadVideoBtn: string;
   mediaAddNumberBtn: string;
+  mediaUploadApkBtn: string;
   mediaFilterAll: string;
   mediaFilterPhoto: string;
   mediaFilterScreenshot: string;
   mediaFilterVideo: string;
   mediaFilterNumber: string;
+  mediaFilterApk: string;
   mediaSearchPlaceholder: string;
   mediaNumberLabel: string;
   mediaNumberPlaceholder: string;
@@ -302,11 +304,16 @@ export interface Translations {
   mediaPlayVideoBtn: string;
   mediaLoadingVideo: string;
   mediaDownloadBtn: string;
+  mediaDownloadingApk: string;
   mediaNumberRequired: string;
   mediaUploadTitleLabel: string;
   mediaUploadTitlePlaceholder: string;
   mediaUploadCaptionLabel: string;
   mediaUploadCaptionPlaceholder: string;
+  mediaApkThumbnailLabel: string;
+  mediaApkPickThumbnailBtn: string;
+  mediaApkChangeThumbnailBtn: string;
+  mediaApkRemoveThumbnailBtn: string;
   mediaConfirmUploadBtn: string;
 }
 
@@ -581,11 +588,13 @@ const bn: Translations = {
   mediaUploadScreenshotBtn: 'KIRON',
   mediaUploadVideoBtn: 'VIDEO',
   mediaAddNumberBtn: 'NUMBER',
+  mediaUploadApkBtn: 'APK',
   mediaFilterAll: 'সব',
   mediaFilterPhoto: 'PHOTO',
   mediaFilterScreenshot: 'KIRON',
   mediaFilterVideo: 'VIDEO',
   mediaFilterNumber: 'NUMBER',
+  mediaFilterApk: 'APK',
   mediaSearchPlaceholder: 'নাম্বার, শিরোনাম বা ফাইলের নাম খুঁজুন...',
   mediaNumberLabel: 'নাম্বার লিখুন',
   mediaNumberPlaceholder: 'যেমন: +88017... বা যেকোনো নাম্বার/পিন',
@@ -596,19 +605,24 @@ const bn: Translations = {
   mediaSaveNumberBtn: 'নাম্বার সংরক্ষণ করুন',
   mediaUploadingLabel: 'আপলোড হচ্ছে...',
   mediaSavedToast: 'সফলভাবে সংরক্ষিত হয়েছে।',
-  mediaVideoTooLarge: 'ফাইল সর্বোচ্চ ৪০ MB এর মধ্যে হতে হবে।',
+  mediaVideoTooLarge: 'ফাইল সর্বোচ্চ ১০০ MB এর মধ্যে হতে হবে।',
   mediaEmptyTitle: 'এই বিভাগে এখনো কিছু নেই',
-  mediaEmptyDesc: 'বাম পাশের মেনু (☰) থেকে XP - 4 চাপ দিয়ে ছবি, ভিডিও, কিরণ বা নাম্বার আপলোড করুন।',
+  mediaEmptyDesc: 'বাম পাশের মেনু (☰) থেকে XP - 4 চাপ দিয়ে ছবি, ভিডিও, কিরণ, নাম্বার বা APK আপলোড করুন।',
   mediaNoMatch: 'খোঁজার সাথে মিলে এমন কোনো আইটেম পাওয়া যায়নি।',
   mediaDeleteConfirm: 'আইটেমটি মুছে ফেলবেন?',
   mediaPlayVideoBtn: 'ভিডিও চালু করুন',
   mediaLoadingVideo: 'ভিডিও লোড হচ্ছে...',
   mediaDownloadBtn: 'ডাউনলোড',
+  mediaDownloadingApk: 'ডাউনলোড হচ্ছে...',
   mediaNumberRequired: 'অনুগ্রহ করে একটি নাম্বার লিখুন।',
   mediaUploadTitleLabel: 'টাইটেল / শিরোনাম (ঐচ্ছিক)',
   mediaUploadTitlePlaceholder: 'টাইটেল লিখুন...',
   mediaUploadCaptionLabel: 'ক্যাপশন (ঐচ্ছিক)',
-  mediaUploadCaptionPlaceholder: 'ছবি বা ভিডিও সম্পর্কে ক্যাপশন লিখুন...',
+  mediaUploadCaptionPlaceholder: 'ছবি, ভিডিও বা APK সম্পর্কে ক্যাপশন লিখুন...',
+  mediaApkThumbnailLabel: 'গ্যালারি থেকে ছবি (ঐচ্ছিক)',
+  mediaApkPickThumbnailBtn: 'গ্যালারি থেকে ছবি বাছাই করুন',
+  mediaApkChangeThumbnailBtn: 'ছবি পরিবর্তন করুন',
+  mediaApkRemoveThumbnailBtn: 'ছবি সরান',
   mediaConfirmUploadBtn: 'আপলোড ও সংরক্ষণ করুন',
 };
 
@@ -883,11 +897,13 @@ const en: Translations = {
   mediaUploadScreenshotBtn: 'KIRON',
   mediaUploadVideoBtn: 'VIDEO',
   mediaAddNumberBtn: 'NUMBER',
+  mediaUploadApkBtn: 'APK',
   mediaFilterAll: 'All',
   mediaFilterPhoto: 'PHOTO',
   mediaFilterScreenshot: 'KIRON',
   mediaFilterVideo: 'VIDEO',
   mediaFilterNumber: 'NUMBER',
+  mediaFilterApk: 'APK',
   mediaSearchPlaceholder: 'Search numbers, titles, or filenames...',
   mediaNumberLabel: 'Number',
   mediaNumberPlaceholder: 'e.g. +88017... or account/PIN number',
@@ -898,19 +914,24 @@ const en: Translations = {
   mediaSaveNumberBtn: 'Save Number',
   mediaUploadingLabel: 'Uploading...',
   mediaSavedToast: 'Saved successfully.',
-  mediaVideoTooLarge: 'File size must be 40 MB or less.',
+  mediaVideoTooLarge: 'File size must be 100 MB or less.',
   mediaEmptyTitle: 'No items in this section yet',
-  mediaEmptyDesc: 'Open the menu (☰) and select XP - 4 to upload PHOTO, VIDEO, KIRON, or NUMBER.',
+  mediaEmptyDesc: 'Open the menu (☰) and select XP - 4 to upload PHOTO, VIDEO, KIRON, NUMBER, or APK.',
   mediaNoMatch: 'No matching items found.',
   mediaDeleteConfirm: 'Delete this item?',
   mediaPlayVideoBtn: 'Play Video',
   mediaLoadingVideo: 'Loading video...',
   mediaDownloadBtn: 'Download',
+  mediaDownloadingApk: 'Downloading...',
   mediaNumberRequired: 'Please enter a number.',
   mediaUploadTitleLabel: 'Title (optional)',
   mediaUploadTitlePlaceholder: 'Enter title...',
   mediaUploadCaptionLabel: 'Caption (optional)',
-  mediaUploadCaptionPlaceholder: 'Write a caption for this photo or video...',
+  mediaUploadCaptionPlaceholder: 'Write a caption for this photo, video, or APK...',
+  mediaApkThumbnailLabel: 'Photo from Gallery (optional)',
+  mediaApkPickThumbnailBtn: 'Choose Photo from Gallery',
+  mediaApkChangeThumbnailBtn: 'Change Photo',
+  mediaApkRemoveThumbnailBtn: 'Remove',
   mediaConfirmUploadBtn: 'Upload & Save',
 };
 
