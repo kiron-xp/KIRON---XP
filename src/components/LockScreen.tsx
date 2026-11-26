@@ -5,6 +5,7 @@ import { Language, SiteEntryConfig, ThemeMode } from '../types';
 import { resolveSocialAppAction, SOCIAL_APPS, SocialAppLogoSvg } from './SocialAppIcons';
 
 const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
+const CENTER_LOGO_URL = `${import.meta.env.BASE_URL}og-image.jpg`;
 const GATE_WALLPAPER_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_0000000063188246b2dc4e77b1130652_ad6f1a5e.webp`;
 
 const OVERLAY_CLASS_MAP: Record<number, string> = {
@@ -197,8 +198,11 @@ export function LockScreen({
               <div className="flex items-center justify-center mb-2.5">
                 <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
                   <img
-                    src={APP_LOGO_URL}
-                    alt={headerBrand}
+                    src={CENTER_LOGO_URL}
+                    alt="KIRON-XP"
+                    width={1448}
+                    height={1086}
+                    fetchPriority="high"
                     className="w-full h-full object-cover object-center block"
                   />
                 </div>
