@@ -11,7 +11,6 @@ import {
   Maximize2,
   Package,
   Play,
-  Plus,
   Sparkles,
   Trash2,
   Upload,
@@ -496,7 +495,7 @@ export function SecurityBackupView({
 
   return (
     <div className="space-y-6">
-      {/* Upload Panel (shown via Hamburger Menu -> XP - 4 or + APK) */}
+      {/* Upload Panel (shown exclusively via Hamburger Menu -> XP - 4) */}
       {uploadPanelOpen && (
         <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 space-y-4 shadow-xs">
           <div className="flex items-center justify-between gap-3">
@@ -811,72 +810,167 @@ export function SecurityBackupView({
 
       {/* Strictly Separated Category Sections */}
       <section className="space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(
-              [
-                ['photo', t.mediaFilterPhoto, counts.photo],
-                ['video', t.mediaFilterVideo, counts.video],
-                ['screenshot', t.mediaFilterScreenshot, counts.screenshot],
-                ['number', t.mediaFilterNumber, counts.number],
-                ['apk', t.mediaFilterApk, counts.apk],
-              ] as const
-            ).map(([id, label, count]) => {
-              const active = filterKind === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setFilterKind(id)}
-                  className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors whitespace-nowrap ${
-                    active
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {label} ({count})
-                </button>
-              );
-            })}
-          </div>
-
-          {filterKind === 'apk' && (
-            <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs whitespace-nowrap">
-              <Plus className="w-3.5 h-3.5" />
-              <span>{t.mediaUploadApkBtn}</span>
-              <input
-                type="file"
-                disabled={uploading}
-                onChange={(e) => handleSelectFilesForComposer(e, 'apk')}
-                className="sr-only"
-              />
-            </label>
-          )}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(
+            [
+              ['photo', t.mediaFilterPhoto, counts.photo],
+              ['video', t.mediaFilterVideo, counts.video],
+              ['screenshot', t.mediaFilterScreenshot, counts.screenshot],
+              ['number', t.mediaFilterNumber, counts.number],
+              ['apk', t.mediaFilterApk, counts.apk],
+            ] as const
+          ).map(([id, label, count]) => {
+            const active = filterKind === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setFilterKind(id)}
+                className={`px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wide transition-colors whitespace-nowrap ${
+                  active
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {label} ({count})
+              </button>
+            );
+          })}
         </div>
 
         {/* Category Content */}
         {categoryItems.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-3 shadow-xs">
+          <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-2 shadow-xs">
             <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               {t.mediaEmptyTitle}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
               {t.mediaEmptyDesc}
             </p>
-            {filterKind === 'apk' && (
-              <div className="pt-1">
-                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold cursor-pointer transition-colors">
-                  <Package className="w-4 h-4" />
-                  <span>{t.mediaUploadApkBtn}</span>
-                  <input
-                    type="file"
-                    disabled={uploading}
-                    onChange={(e) => handleSelectFilesForComposer(e, 'apk')}
-                    className="sr-only"
-                  />
-                </label>
-              </div>
-            )}
+          </div>
+        ) : filterKind === 'apk' ? (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs overflow-hidden">
+            {categoryItems.map((item) => {
+              const isConfirming = confirmDeleteId === item.id;
+              const isDownloading = Boolean(downloadingIds[item.id]);
+              const apkDisplayName =
+                item.title &&
+                item.fileName &&
+                item.title.trim().toLowerCase() !==
+                  item.fileName.replace(/\.apk$/i, '').trim().toLowerCase() &&
+                item.title.trim().toLowerCase() !== item.fileName.trim().toLowerCase()
+                  ? `${item.title} (${item.fileName})`
+                  : item.fileName || item.title;
+
+              return (
+                <div key={item.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-3 sm:gap-5">
+                    {/* Left: Gallery Photo + Center Info (MD KIRON MONDAL -> APK Name -> Caption) */}
+                    <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
+                      {item.thumbnailDataUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setLightboxItem(item)}
+                          title={item.title || apkDisplayName}
+                          className="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                        >
+                          <img
+                            src={item.thumbnailDataUrl}
+                            alt={item.title || apkDisplayName}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-300 flex flex-col items-center justify-center shrink-0">
+                          <Package className="w-5 h-5" />
+                          <span className="text-[9px] font-mono font-bold mt-0.5">.apk</span>
+                        </div>
+                      )}
+
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                            MD KIRON MONDAL
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setConfirmDeleteId(isConfirming ? null : item.id)
+                            }
+                            title={t.deleteAccount}
+                            aria-label={t.deleteAccount}
+                            className="p-1 rounded-md text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 break-all">
+                          {apkDisplayName}
+                        </p>
+
+                        {item.note && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
+                            {item.note}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Side: Tapping SADIYA starts APK download */}
+                    <div className="self-center flex flex-col items-end gap-1 shrink-0 max-w-[140px]">
+                      <button
+                        type="button"
+                        disabled={isDownloading}
+                        onClick={() => handleDownloadMedia(item)}
+                        title={t.mediaDownloadBtn}
+                        className="inline-flex items-center justify-end gap-1.5 px-1.5 py-1 rounded-lg bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-0 text-sm font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 disabled:opacity-60 transition-colors cursor-pointer max-w-full"
+                      >
+                        {isDownloading && (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                        )}
+                        <span className="truncate font-mono">
+                          {isDownloading ? t.mediaDownloadingApk : 'SADIYA'}
+                        </span>
+                      </button>
+                      {item.fileSize ? (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums px-1.5">
+                          {formatFileSize(item.fileSize)}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {isConfirming && (
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs">
+                      <span className="text-red-700 dark:text-red-200 font-medium">
+                        {t.mediaDeleteConfirm}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void onDeleteProfileMedia(item.id);
+                            setConfirmDeleteId(null);
+                          }}
+                          className="px-2.5 py-1 rounded bg-red-600 hover:bg-red-700 text-white font-semibold"
+                        >
+                          {t.confirmDelete}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200"
+                        >
+                          {t.cancel}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
@@ -917,46 +1011,6 @@ export function SecurityBackupView({
                         {getKindBadgeLabel(item.kind)}
                       </span>
                       {resolvedSrc && (
-                        <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
-                          <Maximize2 className="w-3.5 h-3.5" />
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* APK Preview (Gallery photo if attached, otherwise crisp APK emblem) */}
-                  {item.kind === 'apk' && (
-                    <div
-                      onClick={() => {
-                        if (item.thumbnailDataUrl) setLightboxItem(item);
-                      }}
-                      className={`relative min-h-[140px] flex items-center justify-center overflow-hidden ${
-                        item.thumbnailDataUrl
-                          ? 'bg-slate-950 cursor-pointer group'
-                          : 'bg-gradient-to-br from-teal-50 to-emerald-100 dark:from-teal-950/50 dark:to-slate-900 py-8'
-                      }`}
-                    >
-                      {item.thumbnailDataUrl ? (
-                        <img
-                          src={item.thumbnailDataUrl}
-                          alt={item.title || 'APK'}
-                          loading="lazy"
-                          className="w-full h-auto max-h-[420px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.01]"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-1.5 text-teal-700 dark:text-teal-300">
-                          <div className="w-12 h-12 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-teal-200 dark:border-teal-700 flex items-center justify-center shadow-xs">
-                            <Package className="w-6 h-6" />
-                          </div>
-                          <span className="text-[11px] font-mono font-semibold opacity-80">
-                            .apk
-                          </span>
-                        </div>
-                      )}
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-teal-700/90 text-white text-[10px] font-semibold">
-                        {getKindBadgeLabel('apk')}
-                      </span>
-                      {item.thumbnailDataUrl && (
                         <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
                           <Maximize2 className="w-3.5 h-3.5" />
                         </span>
@@ -1045,11 +1099,6 @@ export function SecurityBackupView({
                             {formatFileSize(item.fileSize)}
                           </span>
                         </div>
-                        {item.kind === 'apk' && item.fileName && (
-                          <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
-                            {item.fileName}
-                          </p>
-                        )}
                         {item.note && (
                           <p className="text-xs text-slate-600 dark:text-slate-400 break-words leading-relaxed">
                             {item.note}
