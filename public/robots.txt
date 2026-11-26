@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://whatsapp555.github.io/KIRON---XP/sitemap.xml
+Sitemap: https://kiron-xp.github.io/KIRON---XP/sitemap.xml
