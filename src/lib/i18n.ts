@@ -286,6 +286,7 @@ export interface Translations {
   mediaFilterVideo: string;
   mediaFilterNumber: string;
   mediaFilterApk: string;
+  mediaAllCategories: string;
   mediaSearchPlaceholder: string;
   mediaNumberLabel: string;
   mediaNumberPlaceholder: string;
@@ -595,6 +596,7 @@ const bn: Translations = {
   mediaFilterVideo: 'VIDEO',
   mediaFilterNumber: 'NUMBER',
   mediaFilterApk: 'APK',
+  mediaAllCategories: 'সবগুলো',
   mediaSearchPlaceholder: 'নাম্বার, শিরোনাম বা ফাইলের নাম খুঁজুন...',
   mediaNumberLabel: 'নাম্বার লিখুন',
   mediaNumberPlaceholder: 'যেমন: +88017... বা যেকোনো নাম্বার/পিন',
@@ -904,6 +906,7 @@ const en: Translations = {
   mediaFilterVideo: 'VIDEO',
   mediaFilterNumber: 'NUMBER',
   mediaFilterApk: 'APK',
+  mediaAllCategories: 'All',
   mediaSearchPlaceholder: 'Search numbers, titles, or filenames...',
   mediaNumberLabel: 'Number',
   mediaNumberPlaceholder: 'e.g. +88017... or account/PIN number',

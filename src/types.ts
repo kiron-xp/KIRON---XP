@@ -63,6 +63,7 @@ export interface ProfileMediaEntry {
   id: string;
   kind: ProfileMediaKind;
   title: string;
+  category?: string;
   numberValue?: string;
   note?: string;
   mimeType: string;

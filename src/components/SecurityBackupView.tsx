@@ -43,8 +43,48 @@ interface PendingMediaUpload {
   files: File[];
   title: string;
   caption: string;
+  category?: string;
   previewUrl?: string;
   thumbnailDataUrl?: string;
+}
+
+const APK_CATEGORIES = [
+  'WHATSAPP',
+  'WHATSAPP BUSINESS',
+  'GB WHATSAPP',
+  'FM WHATSAPP',
+  'YO WHATSAPP',
+  'PLUS WHATSAPP',
+  'OG WHATSAPP',
+  'AN WHATSAPP',
+  'WHATSAPP AERO',
+  'FACEBOOK',
+  'FACEBOOK LITE',
+  'MESSENGER',
+  'INSTAGRAM',
+  'TELEGRAM',
+  'TELEGRAM X',
+  'TIK TOK',
+  'IMO',
+  'WECHAT',
+  'SNAPCHAT',
+  'X (TWITTER)',
+  'YOUTUBE',
+  'THREADS',
+  'DISCORD',
+  'LINE',
+  'VIBER',
+  'SHAREIT',
+  'GOOGLE',
+  'OTHER',
+] as const;
+
+function stripBaseApkName(raw?: string): string {
+  if (!raw) return '';
+  const cleaned = raw.replace(/\(\s*base\.apk\s*\)/gi, '').trim();
+  const lower = cleaned.toLowerCase();
+  if (lower === 'base.apk' || lower === 'base') return '';
+  return cleaned;
 }
 
 function formatFileSize(bytes?: number): string {
@@ -77,6 +117,7 @@ export function SecurityBackupView({
   // Gallery & Media Vault state (upload panel opened via XP - 4 menu)
   const [uploadPanelOpen, setUploadPanelOpen] = useState(false);
   const [filterKind, setFilterKind] = useState<ProfileMediaKind>('photo');
+  const [selectedApkCategory, setSelectedApkCategory] = useState<string>('ALL');
   const [pendingUpload, setPendingUpload] = useState<PendingMediaUpload | null>(null);
   const [numberFormOpen, setNumberFormOpen] = useState(false);
   const [numberValue, setNumberValue] = useState('');
@@ -156,6 +197,25 @@ export function SecurityBackupView({
     return list.sort((a, b) => b.createdAt - a.createdAt);
   }, [profileMedia, filterKind]);
 
+  const apkCategoryCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of categoryItems) {
+      if (item.kind !== 'apk') continue;
+      const cat = item.category?.trim();
+      if (cat) {
+        map.set(cat, (map.get(cat) ?? 0) + 1);
+      }
+    }
+    return Array.from(map.entries());
+  }, [categoryItems]);
+
+  const visibleApkItems = useMemo(() => {
+    if (filterKind !== 'apk' || selectedApkCategory === 'ALL') {
+      return categoryItems;
+    }
+    return categoryItems.filter((item) => item.category === selectedApkCategory);
+  }, [categoryItems, filterKind, selectedApkCategory]);
+
   // Auto-load chunked photos & videos in active category (skip APK chunks until user taps Download)
   useEffect(() => {
     const targets = categoryItems.filter((item) => {
@@ -230,6 +290,7 @@ export function SecurityBackupView({
       files,
       title: '',
       caption: '',
+      category: kind === 'apk' ? 'WHATSAPP' : undefined,
       previewUrl,
       thumbnailDataUrl: undefined,
     });
@@ -277,9 +338,10 @@ export function SecurityBackupView({
     e.preventDefault();
     if (!pendingUpload || pendingUpload.files.length === 0) return;
 
-    const { kind, files, title, caption, thumbnailDataUrl } = pendingUpload;
-    const customTitle = title.trim();
+    const { kind, files, title, caption, category, thumbnailDataUrl } = pendingUpload;
+    const customTitle = stripBaseApkName(title.trim());
     const customCaption = caption.trim().slice(0, 500) || undefined;
+    const selectedCategory = kind === 'apk' ? (category || 'WHATSAPP') : undefined;
 
     setUploadError('');
     setUploading(true);
@@ -309,20 +371,37 @@ export function SecurityBackupView({
         const id = sanitizeDocId(
           crypto.randomUUID ? crypto.randomUUID() : `${kind}-${now}-${i}`
         );
+        const cleanRawName = stripBaseApkName(file.name).replace(/\.[^.]+$/, '');
         const fallbackTitle =
-          file.name.replace(/\.[^.]+$/, '') ||
-          (kind === 'video' ? 'Video' : kind === 'apk' ? 'App' : kind.toUpperCase());
+          cleanRawName ||
+          (kind === 'video'
+            ? 'Video'
+            : kind === 'apk'
+            ? selectedCategory || 'App'
+            : kind.toUpperCase());
         const resolvedTitle = customTitle
           ? files.length > 1
             ? `${customTitle} (${i + 1})`.slice(0, 160)
             : customTitle.slice(0, 160)
           : fallbackTitle.slice(0, 160);
 
+        const cleanApkBase = (
+          customTitle ||
+          cleanRawName ||
+          selectedCategory ||
+          'app'
+        )
+          .replace(/[^a-zA-Z0-9._ -]+/g, '')
+          .trim()
+          .replace(/\s+/g, '_');
+
         const resolvedFileName =
           kind === 'apk'
-            ? file.name.toLowerCase().endsWith('.apk')
-              ? file.name.slice(0, 200)
-              : `${file.name.slice(0, 195)}.apk`
+            ? stripBaseApkName(file.name)
+              ? file.name.toLowerCase().endsWith('.apk')
+                ? file.name.slice(0, 200)
+                : `${file.name.slice(0, 195)}.apk`
+              : `${(cleanApkBase || 'app').slice(0, 195)}.apk`
             : file.name.slice(0, 200);
 
         const resolvedMimeType =
@@ -334,6 +413,7 @@ export function SecurityBackupView({
           id,
           kind,
           title: resolvedTitle,
+          category: selectedCategory,
           note: customCaption,
           mimeType: resolvedMimeType,
           fileName: resolvedFileName,
@@ -462,7 +542,13 @@ export function SecurityBackupView({
       if (!href) return;
       const a = document.createElement('a');
       a.href = href;
-      const baseName = item.fileName || `${item.title || item.kind}-${item.id}`;
+      const cleanStoredFile = stripBaseApkName(item.fileName);
+      const cleanTitle = stripBaseApkName(item.title);
+      const baseName =
+        cleanStoredFile ||
+        cleanTitle ||
+        (item.category ? item.category.replace(/\s+/g, '_') : '') ||
+        `${item.kind}-${item.id}`;
       a.download =
         item.kind === 'apk' && !baseName.toLowerCase().endsWith('.apk')
           ? `${baseName}.apk`
@@ -613,7 +699,12 @@ export function SecurityBackupView({
                       {getKindBadgeLabel(pendingUpload.kind)}
                     </span>
                     <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
-                      {pendingUpload.files.length > 1
+                      {pendingUpload.kind === 'apk'
+                        ? pendingUpload.title.trim() ||
+                          stripBaseApkName(pendingUpload.files[0]?.name) ||
+                          pendingUpload.category ||
+                          'APK App'
+                        : pendingUpload.files.length > 1
                         ? `${pendingUpload.files.length} files`
                         : pendingUpload.files[0]?.name}
                     </span>
@@ -627,38 +718,70 @@ export function SecurityBackupView({
               </div>
 
               {pendingUpload.kind === 'apk' && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    {t.mediaApkThumbnailLabel}
-                  </label>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors">
-                      <ImageIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>
-                        {pendingUpload.thumbnailDataUrl
-                          ? t.mediaApkChangeThumbnailBtn
-                          : t.mediaApkPickThumbnailBtn}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={uploading}
-                        onChange={handleSelectApkThumbnail}
-                        className="sr-only"
-                      />
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                      {t.categoryLabel}
                     </label>
-                    {pendingUpload.thumbnailDataUrl && (
-                      <button
-                        type="button"
-                        disabled={uploading}
-                        onClick={handleRemoveApkThumbnail}
-                        className="px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
-                      >
-                        {t.mediaApkRemoveThumbnailBtn}
-                      </button>
-                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                      {APK_CATEGORIES.map((cat) => {
+                        const active = (pendingUpload.category || 'WHATSAPP') === cat;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            disabled={uploading}
+                            onClick={() =>
+                              setPendingUpload((prev) =>
+                                prev ? { ...prev, category: cat } : prev
+                              )
+                            }
+                            className={`px-2.5 py-1.5 rounded-lg border text-center text-[11px] font-semibold tracking-wide transition-colors truncate ${
+                              active
+                                ? 'border-emerald-600 bg-emerald-600 text-white shadow-xs'
+                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      {t.mediaApkThumbnailLabel}
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors">
+                        <ImageIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>
+                          {pendingUpload.thumbnailDataUrl
+                            ? t.mediaApkChangeThumbnailBtn
+                            : t.mediaApkPickThumbnailBtn}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={uploading}
+                          onChange={handleSelectApkThumbnail}
+                          className="sr-only"
+                        />
+                      </label>
+                      {pendingUpload.thumbnailDataUrl && (
+                        <button
+                          type="button"
+                          disabled={uploading}
+                          onClick={handleRemoveApkThumbnail}
+                          className="px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        >
+                          {t.mediaApkRemoveThumbnailBtn}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
 
               <div>
@@ -838,6 +961,40 @@ export function SecurityBackupView({
           })}
         </div>
 
+        {/* APK Category Filter Bar */}
+        {filterKind === 'apk' && apkCategoryCounts.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSelectedApkCategory('ALL')}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide transition-colors whitespace-nowrap ${
+                selectedApkCategory === 'ALL'
+                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs'
+                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              {t.mediaAllCategories} ({categoryItems.length})
+            </button>
+            {apkCategoryCounts.map(([cat, count]) => {
+              const active = selectedApkCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedApkCategory(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold tracking-wide transition-colors whitespace-nowrap ${
+                    active
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {cat} ({count})
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Category Content */}
         {categoryItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-2 shadow-xs">
@@ -850,33 +1007,29 @@ export function SecurityBackupView({
           </div>
         ) : filterKind === 'apk' ? (
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs overflow-hidden">
-            {categoryItems.map((item) => {
+            {visibleApkItems.map((item) => {
               const isConfirming = confirmDeleteId === item.id;
               const isDownloading = Boolean(downloadingIds[item.id]);
+              const cleanTitle = stripBaseApkName(item.title);
+              const cleanFile = stripBaseApkName(item.fileName).replace(/\.apk$/i, '').trim();
               const apkDisplayName =
-                item.title &&
-                item.fileName &&
-                item.title.trim().toLowerCase() !==
-                  item.fileName.replace(/\.apk$/i, '').trim().toLowerCase() &&
-                item.title.trim().toLowerCase() !== item.fileName.trim().toLowerCase()
-                  ? `${item.title} (${item.fileName})`
-                  : item.fileName || item.title;
+                cleanTitle || cleanFile || item.category || 'Android App';
 
               return (
                 <div key={item.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
                   <div className="flex items-center justify-between gap-3 sm:gap-5">
-                    {/* Left: Gallery Photo + Center Info (MD KIRON MONDAL -> APK Name -> Caption) */}
+                    {/* Left: Gallery Photo + Center Info (MD KIRON MONDAL -> APK Name -> Caption -> APK - CATEGORY) */}
                     <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
                       {item.thumbnailDataUrl ? (
                         <button
                           type="button"
                           onClick={() => setLightboxItem(item)}
-                          title={item.title || apkDisplayName}
+                          title={apkDisplayName}
                           className="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                         >
                           <img
                             src={item.thumbnailDataUrl}
-                            alt={item.title || apkDisplayName}
+                            alt={apkDisplayName}
                             loading="lazy"
                             className="w-full h-full object-cover"
                           />
@@ -906,13 +1059,19 @@ export function SecurityBackupView({
                           </button>
                         </div>
 
-                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 break-all">
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 break-words">
                           {apkDisplayName}
                         </p>
 
                         {item.note && (
                           <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
                             {item.note}
+                          </p>
+                        )}
+
+                        {item.category && (
+                          <p className="pt-0.5 text-[11px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-300 tracking-wide">
+                            APK - {item.category}
                           </p>
                         )}
                       </div>
@@ -1213,7 +1372,11 @@ export function SecurityBackupView({
             <div className="px-4 py-3 border-b border-white/15 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white truncate">
-                  {lightboxItem.title}
+                  {lightboxItem.kind === 'apk'
+                    ? stripBaseApkName(lightboxItem.title) ||
+                      lightboxItem.category ||
+                      'Android App'
+                    : lightboxItem.title}
                 </p>
                 {lightboxItem.note && (
                   <p className="text-xs text-white/70 truncate mt-0.5">

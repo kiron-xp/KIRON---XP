@@ -224,6 +224,10 @@
           "type": "string",
           "maxLength": 160
         },
+        "category": {
+          "type": "string",
+          "maxLength": 60
+        },
         "numberValue": {
           "type": "string",
           "maxLength": 120

@@ -432,6 +432,9 @@ function cleanProfileMediaPayload(
     updatedAt,
   };
 
+  if (typeof entry.category === 'string' && entry.category.trim().length > 0) {
+    payload.category = entry.category.trim().slice(0, 60);
+  }
   if (typeof entry.numberValue === 'string' && entry.numberValue.trim().length > 0) {
     payload.numberValue = entry.numberValue.trim().slice(0, 120);
   }

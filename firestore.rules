@@ -100,12 +100,13 @@ service cloud.firestore {
           'id', 'kind', 'title', 'mimeType', 'chunkCount', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'id', 'kind', 'title', 'numberValue', 'note', 'mimeType',
+          'id', 'kind', 'title', 'category', 'numberValue', 'note', 'mimeType',
           'fileName', 'fileSize', 'dataUrl', 'thumbnailDataUrl', 'chunkCount', 'createdAt', 'updatedAt'
         ])
         && data.id == mediaId
         && data.kind in ['photo', 'screenshot', 'video', 'number', 'apk']
         && data.title is string && data.title.size() <= 160
+        && isValidOptionalString(data, 'category', 60)
         && isValidOptionalString(data, 'numberValue', 120)
         && isValidOptionalString(data, 'note', 500)
         && data.mimeType is string && data.mimeType.size() <= 100
@@ -255,7 +256,7 @@ service cloud.firestore {
         && incoming().id == existing().id
         && incoming().createdAt == existing().createdAt
         && incoming().diff(existing()).affectedKeys().hasOnly([
-          'title', 'numberValue', 'note', 'updatedAt'
+          'title', 'category', 'numberValue', 'note', 'updatedAt'
         ]);
       allow delete: if isValidId(mediaId);
 
