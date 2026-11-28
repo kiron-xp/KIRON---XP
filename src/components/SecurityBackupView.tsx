@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Download,
   Edit3,
@@ -142,9 +144,11 @@ export function SecurityBackupView({
   const [openApkMenuId, setOpenApkMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [lightboxItem, setLightboxItem] = useState<ProfileMediaEntry | null>(null);
+  const [lightboxGroup, setLightboxGroup] = useState<ProfileMediaEntry[]>([]);
   const [editingApk, setEditingApk] = useState<{
     item: ProfileMediaEntry;
     title: string;
+    fileName: string;
     caption: string;
     category: string;
     thumbnailDataUrl?: string;
@@ -263,6 +267,32 @@ export function SecurityBackupView({
     }
     return categoryItems.filter((item) => item.category === selectedApkCategory);
   }, [categoryItems, filterKind, selectedApkCategory]);
+
+  // Group multi-photo posts (post:<groupId>) while keeping single photos as 1-item posts
+  const photoPosts = useMemo(() => {
+    if (filterKind !== 'photo' && filterKind !== 'screenshot') return [];
+    const groups = new Map<string, ProfileMediaEntry[]>();
+    for (const item of categoryItems) {
+      const groupKey =
+        item.category && item.category.startsWith('post:') ? item.category : `single:${item.id}`;
+      const arr = groups.get(groupKey);
+      if (arr) arr.push(item);
+      else groups.set(groupKey, [item]);
+    }
+    return Array.from(groups.entries())
+      .map(([groupKey, items]) => {
+        const sortedItems = [...items].sort((a, b) => a.createdAt - b.createdAt);
+        const first = sortedItems[0];
+        return {
+          groupKey,
+          items: sortedItems,
+          createdAt: Math.max(...sortedItems.map((x) => x.createdAt)),
+          title: first.title?.trim() || '',
+          note: first.note?.trim() || '',
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }, [categoryItems, filterKind]);
 
   // Auto-load chunked photos & videos in active category (skip APK chunks until user taps Download)
   useEffect(() => {
@@ -444,6 +474,12 @@ export function SecurityBackupView({
     setUploadProgress(8);
 
     try {
+      const batchBaseTime = Date.now();
+      const postGroupCategory =
+        (kind === 'photo' || kind === 'screenshot') && files.length > 1
+          ? `post:${batchBaseTime.toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+          : undefined;
+      const resolvedCategory = selectedCategory ?? postGroupCategory;
       const progressByFile = new Array<number>(files.length).fill(0);
       const updateAggregateProgress = () => {
         const total = progressByFile.reduce((sum, p) => sum + p, 0);
@@ -463,7 +499,7 @@ export function SecurityBackupView({
           rawDataUrl = await fileToBase64DataUrl(file);
         }
 
-        const now = Date.now() + i;
+        const now = batchBaseTime + i;
         const id = sanitizeDocId(
           crypto.randomUUID ? crypto.randomUUID() : `${kind}-${now}-${i}`
         );
@@ -475,24 +511,21 @@ export function SecurityBackupView({
             : kind === 'apk'
             ? selectedCategory || 'App'
             : kind.toUpperCase());
-        const resolvedTitle = customTitle
-          ? files.length > 1
-            ? `${customTitle} (${i + 1})`.slice(0, 160)
-            : customTitle.slice(0, 160)
-          : fallbackTitle.slice(0, 160);
+        const resolvedTitle =
+          kind === 'photo' || kind === 'screenshot'
+            ? customTitle.slice(0, 160)
+            : (customTitle || fallbackTitle).slice(0, 160);
 
         const cleanApkNameRaw = file.name.trim();
         const resolvedFileName =
           kind === 'apk'
             ? cleanApkNameRaw
-              ? cleanApkNameRaw.toLowerCase().endsWith('.apk')
-                ? cleanApkNameRaw.slice(0, 200)
-                : `${cleanApkNameRaw.slice(0, 195)}.apk`
+              ? cleanApkNameRaw.slice(0, 200)
               : `${(
-                  (customTitle || cleanRawName || selectedCategory || 'app')
+                  (cleanRawName || selectedCategory || 'base')
                     .replace(/[^a-zA-Z0-9._ -]+/g, '')
                     .trim()
-                    .replace(/\s+/g, '_') || 'app'
+                    .replace(/\s+/g, '_') || 'base'
                 ).slice(0, 195)}.apk`
             : file.name.slice(0, 200);
 
@@ -505,7 +538,7 @@ export function SecurityBackupView({
           id,
           kind,
           title: resolvedTitle,
-          category: selectedCategory,
+          category: resolvedCategory,
           note: customCaption,
           mimeType: resolvedMimeType,
           fileName: resolvedFileName,
@@ -663,6 +696,7 @@ export function SecurityBackupView({
     setEditingApk({
       item,
       title: cleanTitle || stripBaseApkName(item.fileName).replace(/\.apk$/i, '') || '',
+      fileName: item.fileName ?? '',
       caption: item.note ?? '',
       category: item.category || 'WHATSAPP',
       thumbnailDataUrl: item.thumbnailDataUrl,
@@ -692,16 +726,20 @@ export function SecurityBackupView({
       return;
     }
     setEditApkError('');
-    setEditingApk((prev) => (prev ? { ...prev, replacementFile: file } : prev));
+    setEditingApk((prev) =>
+      prev ? { ...prev, replacementFile: file, fileName: file.name.trim() } : prev
+    );
   };
 
   const handleSaveApkEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingApk || !onUpdateProfileMedia) return;
-    const { item, title, caption, category, thumbnailDataUrl, replacementFile } = editingApk;
+    const { item, title, fileName, caption, category, thumbnailDataUrl, replacementFile } =
+      editingApk;
     const cleanTitle = stripBaseApkName(title.trim()) || category || 'Android App';
     const cleanCaption = caption.trim().slice(0, 500) || undefined;
     const selectedCategory = category || 'WHATSAPP';
+    const editedFileName = fileName.trim().slice(0, 200) || undefined;
 
     setSavingApkEdit(true);
     setEditApkError('');
@@ -711,16 +749,8 @@ export function SecurityBackupView({
       if (replacementFile) {
         const rawDataUrl = await fileToBase64DataUrl(replacementFile);
         const cleanReplacementRaw = replacementFile.name.trim();
-        const cleanRawName = stripBaseApkName(replacementFile.name).replace(/\.[^.]+$/, '');
-        const cleanBase = (cleanTitle || cleanRawName || selectedCategory || 'app')
-          .replace(/[^a-zA-Z0-9._ -]+/g, '')
-          .trim()
-          .replace(/\s+/g, '_');
-        const resolvedFileName = cleanReplacementRaw
-          ? cleanReplacementRaw.toLowerCase().endsWith('.apk')
-            ? cleanReplacementRaw.slice(0, 200)
-            : `${cleanReplacementRaw.slice(0, 195)}.apk`
-          : `${(cleanBase || 'app').slice(0, 195)}.apk`;
+        const resolvedFileName =
+          editedFileName || (cleanReplacementRaw ? cleanReplacementRaw.slice(0, 200) : 'base.apk');
 
         const updatedEntry: ProfileMediaEntry = {
           ...item,
@@ -751,6 +781,7 @@ export function SecurityBackupView({
           ...item,
           title: cleanTitle.slice(0, 160),
           category: selectedCategory,
+          fileName: editedFileName ?? item.fileName,
           note: cleanCaption,
           thumbnailDataUrl,
         };
@@ -1297,9 +1328,7 @@ export function SecurityBackupView({
               const apkDisplayName =
                 cleanTitle || cleanFile || item.category || 'Android App';
               const apkCategoryLine = item.category ? `${item.category} - APK` : 'APK';
-              const originalApkFileName =
-                item.fileName?.trim() ||
-                `${(cleanFile || cleanTitle || item.category || 'base').replace(/\s+/g, '_')}.apk`;
+              const originalApkFileName = item.fileName?.trim() || 'base.apk';
 
               return (
                 <div
@@ -1476,6 +1505,206 @@ export function SecurityBackupView({
               );
             })}
           </div>
+        ) : filterKind === 'photo' || filterKind === 'screenshot' ? (
+          <div className="max-w-2xl mx-auto space-y-4">
+            {photoPosts.map((post) => {
+              const isConfirming = confirmDeleteId === post.groupKey;
+              const count = post.items.length;
+              const getSrc = (entry: ProfileMediaEntry) =>
+                entry.dataUrl || mediaUrls[entry.id] || getCachedProfileMediaObjectUrl(entry.id);
+              const openPhotoLightbox = (entry: ProfileMediaEntry) => {
+                if (!getSrc(entry)) return;
+                setLightboxGroup(post.items);
+                setLightboxItem(entry);
+              };
+
+              const renderTile = (
+                entry: ProfileMediaEntry,
+                extraClass = '',
+                overlayCount = 0
+              ) => {
+                const src = getSrc(entry);
+                const loading = Boolean(loadingMediaIds[entry.id]);
+                return (
+                  <div
+                    key={entry.id}
+                    onClick={() => openPhotoLightbox(entry)}
+                    className={`relative bg-slate-100 dark:bg-slate-900 overflow-hidden cursor-pointer group ${extraClass}`}
+                  >
+                    {src ? (
+                      <img
+                        src={src}
+                        alt={entry.title || post.title || entry.kind}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full min-h-[140px] text-slate-400">
+                        <Loader2 className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                      </div>
+                    )}
+                    {overlayCount > 0 && (
+                      <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                        <span className="text-white text-2xl sm:text-3xl font-bold tracking-tight">
+                          +{overlayCount}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+
+              return (
+                <article
+                  key={post.groupKey}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs"
+                >
+                  {/* Post Top Header (Title / Caption + Actions, matching Facebook post layout) */}
+                  <div className="px-4 py-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-1">
+                      {post.title && (
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white break-words">
+                          {post.title}
+                        </h3>
+                      )}
+                      {post.note && (
+                        <p className="text-sm sm:text-base text-slate-900 dark:text-slate-100 break-words leading-snug whitespace-pre-wrap">
+                          {post.note}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                        <span>{formatMediaDate(post.createdAt)}</span>
+                        {count > 1 && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span>
+                              {count} {t.secondsShort === 'সে.' ? 'টি ছবি' : 'photos'}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      {count === 1 && (
+                        <button
+                          type="button"
+                          disabled={Boolean(downloadingIds[post.items[0].id])}
+                          onClick={() => handleDownloadMedia(post.items[0])}
+                          title={t.mediaDownloadBtn}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          {downloadingIds[post.items[0].id] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setConfirmDeleteId(isConfirming ? null : post.groupKey)
+                        }
+                        title={t.deleteAccount}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Facebook-Style Multi-Photo Collage Layout */}
+                  {count === 1 ? (
+                    <div
+                      onClick={() => openPhotoLightbox(post.items[0])}
+                      className="relative min-h-[180px] bg-slate-950 cursor-pointer group overflow-hidden flex items-center justify-center"
+                    >
+                      {getSrc(post.items[0]) ? (
+                        <img
+                          src={getSrc(post.items[0])}
+                          alt={post.title || post.items[0].kind}
+                          loading="lazy"
+                          className="w-full h-auto max-h-[580px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.01]"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-56 text-slate-400">
+                          <Loader2
+                            className={`w-5 h-5 ${loadingMediaIds[post.items[0].id] ? 'animate-spin' : ''}`}
+                          />
+                        </div>
+                      )}
+                      {getSrc(post.items[0]) && (
+                        <span className="absolute bottom-2.5 right-2.5 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
+                          <Maximize2 className="w-3.5 h-3.5" />
+                        </span>
+                      )}
+                    </div>
+                  ) : count === 2 ? (
+                    <div className="grid grid-cols-2 gap-1 bg-white dark:bg-slate-950">
+                      {post.items.map((entry) =>
+                        renderTile(entry, 'aspect-[3/4] sm:aspect-[4/5]')
+                      )}
+                    </div>
+                  ) : count === 3 ? (
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-[360px] sm:h-[460px] bg-white dark:bg-slate-950">
+                      {renderTile(post.items[0], 'row-span-2 h-full')}
+                      {renderTile(post.items[1], 'h-full')}
+                      {renderTile(post.items[2], 'h-full')}
+                    </div>
+                  ) : count === 4 ? (
+                    <div className="grid grid-cols-2 grid-rows-3 gap-1 h-[390px] sm:h-[490px] bg-white dark:bg-slate-950">
+                      {renderTile(post.items[0], 'row-span-3 h-full')}
+                      {renderTile(post.items[1], 'h-full')}
+                      {renderTile(post.items[2], 'h-full')}
+                      {renderTile(post.items[3], 'h-full')}
+                    </div>
+                  ) : (
+                    <div className="space-y-1 bg-white dark:bg-slate-950">
+                      <div className="grid grid-cols-2 gap-1 h-[195px] sm:h-[240px]">
+                        {renderTile(post.items[0], 'h-full')}
+                        {renderTile(post.items[1], 'h-full')}
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 h-[135px] sm:h-[175px]">
+                        {renderTile(post.items[2], 'h-full')}
+                        {renderTile(post.items[3], 'h-full')}
+                        {renderTile(post.items[4], 'h-full', count > 5 ? count - 5 : 0)}
+                      </div>
+                    </div>
+                  )}
+
+                  {isConfirming && (
+                    <div className="m-3 flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs">
+                      <span className="text-red-700 dark:text-red-200 font-medium">
+                        {t.mediaDeleteConfirm}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await Promise.all(
+                              post.items.map((entry) => onDeleteProfileMedia(entry.id))
+                            );
+                            setConfirmDeleteId(null);
+                          }}
+                          className="px-2.5 py-1 rounded bg-red-600 hover:bg-red-700 text-white font-semibold"
+                        >
+                          {t.confirmDelete}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200"
+                        >
+                          {t.cancel}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
             {categoryItems.map((item) => {
@@ -1491,36 +1720,6 @@ export function SecurityBackupView({
                   key={item.id}
                   className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden flex flex-col justify-between shadow-xs"
                 >
-                  {/* PHOTO & KIRON Visual Preview (Full uncropped photo on display) */}
-                  {(item.kind === 'photo' || item.kind === 'screenshot') && (
-                    <div
-                      onClick={() => {
-                        if (resolvedSrc) setLightboxItem(item);
-                      }}
-                      className="relative min-h-[160px] bg-slate-950 cursor-pointer group overflow-hidden flex items-center justify-center"
-                    >
-                      {resolvedSrc ? (
-                        <img
-                          src={resolvedSrc}
-                          alt={item.title || item.kind}
-                          loading="lazy"
-                          className="w-full h-auto max-h-[560px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.01]"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center w-full h-44 text-slate-400">
-                          <Loader2 className={`w-5 h-5 ${isLoadingMedia ? 'animate-spin' : ''}`} />
-                        </div>
-                      )}
-                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-950/75 text-white text-[10px] font-semibold">
-                        {getKindBadgeLabel(item.kind)}
-                      </span>
-                      {resolvedSrc && (
-                        <span className="absolute bottom-2 right-2 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
-                          <Maximize2 className="w-3.5 h-3.5" />
-                        </span>
-                      )}
-                    </div>
-                  )}
 
                   {/* VIDEO Player (Full uncropped video on display + fullscreen lightbox) */}
                   {item.kind === 'video' && (
@@ -1702,11 +1901,14 @@ export function SecurityBackupView({
         )}
       </section>
 
-      {/* Fullscreen Lightbox Modal for Full Photo & Full Video */}
+      {/* Fullscreen Lightbox Modal for Full Photo & Full Video (with multi-photo Prev/Next) */}
       {lightboxItem && lightboxMediaSrc && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/92 backdrop-blur-xs"
-          onClick={() => setLightboxItem(null)}
+          onClick={() => {
+            setLightboxItem(null);
+            setLightboxGroup([]);
+          }}
           role="dialog"
           aria-modal="true"
         >
@@ -1715,19 +1917,32 @@ export function SecurityBackupView({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-4 py-3 border-b border-white/15 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-white truncate">
-                  {lightboxItem.kind === 'apk'
-                    ? stripBaseApkName(lightboxItem.title) ||
-                      lightboxItem.category ||
-                      'Android App'
-                    : lightboxItem.title}
-                </p>
-                {lightboxItem.note && (
-                  <p className="text-xs text-white/70 truncate mt-0.5">
-                    {lightboxItem.note}
-                  </p>
+              <div className="min-w-0 flex items-center gap-2.5">
+                {lightboxGroup.length > 1 && (
+                  <span className="px-2 py-0.5 rounded bg-white/15 text-xs font-semibold tabular-nums shrink-0">
+                    {Math.max(
+                      1,
+                      lightboxGroup.findIndex((x) => x.id === lightboxItem.id) + 1
+                    )}{' '}
+                    / {lightboxGroup.length}
+                  </span>
                 )}
+                <div className="min-w-0">
+                  {(lightboxItem.kind === 'apk' || lightboxItem.title) && (
+                    <p className="text-sm font-semibold text-white truncate">
+                      {lightboxItem.kind === 'apk'
+                        ? stripBaseApkName(lightboxItem.title) ||
+                          lightboxItem.category ||
+                          'Android App'
+                        : lightboxItem.title}
+                    </p>
+                  )}
+                  {lightboxItem.note && (
+                    <p className="text-xs text-white/75 truncate mt-0.5">
+                      {lightboxItem.note}
+                    </p>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
@@ -1749,7 +1964,10 @@ export function SecurityBackupView({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setLightboxItem(null)}
+                  onClick={() => {
+                    setLightboxItem(null);
+                    setLightboxGroup([]);
+                  }}
                   aria-label={t.close}
                   className="p-1.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white"
                 >
@@ -1757,7 +1975,36 @@ export function SecurityBackupView({
                 </button>
               </div>
             </div>
-            <div className="p-2 bg-black flex items-center justify-center max-h-[85vh] overflow-auto">
+            <div className="relative p-2 bg-black flex items-center justify-center max-h-[85vh] overflow-auto">
+              {lightboxGroup.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Previous"
+                    onClick={() => {
+                      const idx = lightboxGroup.findIndex((x) => x.id === lightboxItem.id);
+                      const prevIdx =
+                        (idx - 1 + lightboxGroup.length) % lightboxGroup.length;
+                      setLightboxItem(lightboxGroup[prevIdx]);
+                    }}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/65 hover:bg-black/85 border border-white/20 text-white transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next"
+                    onClick={() => {
+                      const idx = lightboxGroup.findIndex((x) => x.id === lightboxItem.id);
+                      const nextIdx = (idx + 1) % lightboxGroup.length;
+                      setLightboxItem(lightboxGroup[nextIdx]);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/65 hover:bg-black/85 border border-white/20 text-white transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
               {lightboxItem.kind === 'video' ? (
                 <video
                   src={lightboxMediaSrc}
@@ -1769,7 +2016,7 @@ export function SecurityBackupView({
               ) : (
                 <img
                   src={lightboxMediaSrc}
-                  alt={lightboxItem.title}
+                  alt={lightboxItem.title || 'Photo'}
                   className="max-w-full max-h-[82vh] w-auto h-auto object-contain rounded-lg"
                 />
               )}
@@ -1903,6 +2150,23 @@ export function SecurityBackupView({
                 }
                 placeholder={t.mediaUploadTitlePlaceholder}
                 className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Original APK File Name (shown on SADIYA tap) */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {t.secondsShort === 'সে.' ? 'APK ফাইলের আসল নাম' : 'APK File Name'}
+              </label>
+              <input
+                type="text"
+                value={editingApk.fileName}
+                disabled={savingApkEdit}
+                onChange={(e) =>
+                  setEditingApk((prev) => (prev ? { ...prev, fileName: e.target.value } : prev))
+                }
+                placeholder="base.apk"
+                className="w-full px-3 py-2 text-sm font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
               />
             </div>
 

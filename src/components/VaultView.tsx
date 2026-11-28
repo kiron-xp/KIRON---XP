@@ -374,13 +374,13 @@ export function VaultView({
 
                     return (
                       <div
-                        className={`self-center flex flex-col items-center gap-1.5 p-1.5 rounded-xl border transition-colors shrink-0 ${frameBorderClass}`}
+                        className={`self-center flex flex-col items-center gap-2 p-2 rounded-xl border transition-colors shrink-0 min-w-[116px] max-w-[175px] ${frameBorderClass}`}
                       >
                         <button
                           type="button"
                           onClick={() => handleCopyCode(acc.id, state.code)}
                           title={t.copyCode}
-                          className={`flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg border font-mono text-base sm:text-xl font-extrabold tracking-[0.1em] tabular-nums leading-none cursor-pointer select-all transition-colors ${digitBoxClass}`}
+                          className={`w-full flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg border font-mono text-xs sm:text-sm font-bold tracking-[0.12em] tabular-nums cursor-pointer select-all transition-colors ${digitBoxClass}`}
                         >
                           <span>{partA}</span>
                           {partB && (
@@ -397,7 +397,7 @@ export function VaultView({
                           type="button"
                           onClick={() => handleCopyCode(acc.id, state.code)}
                           title={t.copyCode}
-                          className={`w-full inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
+                          className={`w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
                             isCopied
                               ? 'border-emerald-600 bg-emerald-600 text-white'
                               : 'border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-slate-950'
@@ -405,12 +405,12 @@ export function VaultView({
                         >
                           {isCopied ? (
                             <>
-                              <Check className="w-3 h-3" />
+                              <Check className="w-3.5 h-3.5" />
                               <span>{t.copied}</span>
                             </>
                           ) : (
                             <>
-                              <Copy className="w-3 h-3" />
+                              <Copy className="w-3.5 h-3.5" />
                               <span>{t.secondsShort === 'সে.' ? 'কপি' : 'Copy'}</span>
                             </>
                           )}

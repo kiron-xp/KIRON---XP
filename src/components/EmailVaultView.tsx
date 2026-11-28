@@ -379,11 +379,11 @@ export function EmailVaultView({
             const isRevealed = Boolean(revealedIds[entry.id]);
             const titleText = entry.label?.trim();
             const caption = entry.note?.trim();
-            const emailCopyKey = `email-copy-${entry.id}`;
-            const isEmailCopied = copiedKey === emailCopyKey;
             const copyKey = `right-copy-${entry.id}`;
             const isCopied = copiedKey === copyKey;
-            const rightValueToCopy = entry.password || entry.email;
+            const rightValueToCopy = entry.password
+              ? `${entry.email}\n${entry.password}`
+              : entry.email;
 
             return (
               <div
@@ -392,34 +392,12 @@ export function EmailVaultView({
               >
                 <div className="flex items-center justify-between gap-3 sm:gap-5">
                   <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
-                    <div className="flex flex-col items-center gap-2 shrink-0">
+                    <div className="flex flex-col items-center shrink-0">
                       <AccountAvatar
                         issuer={entry.email}
                         avatarDataUrl={entry.avatarDataUrl}
                         size="lg"
                       />
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(entry.email, emailCopyKey)}
-                        title={entry.email}
-                        className={`min-w-[56px] inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                          isEmailCopied
-                            ? 'border-emerald-600 bg-emerald-600 text-white'
-                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
-                        }`}
-                      >
-                        {isEmailCopied ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            <span>{t.copied}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>{t.secondsShort === 'সে.' ? 'কপি' : 'Copy'}</span>
-                          </>
-                        )}
-                      </button>
                     </div>
 
                     <div className="min-w-0 flex-1 space-y-1">
