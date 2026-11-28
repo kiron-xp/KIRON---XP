@@ -1621,14 +1621,14 @@ export function SecurityBackupView({
                   <div
                     key={entry.id}
                     onClick={() => openPhotoLightbox(entry)}
-                    className={`relative bg-slate-100 dark:bg-slate-900 overflow-hidden cursor-pointer group ${extraClass}`}
+                    className={`relative bg-slate-950 overflow-hidden cursor-pointer group flex items-center justify-center ${extraClass}`}
                   >
                     {src ? (
                       <img
                         src={src}
                         alt={entry.title || post.title || entry.kind}
                         loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                        className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-[1.01]"
                       />
                     ) : (
                       <div className="flex items-center justify-center w-full h-full min-h-[140px] text-slate-400">
@@ -1778,31 +1778,31 @@ export function SecurityBackupView({
                         )}
                       </div>
                     ) : count === 2 ? (
-                      <div className="grid grid-cols-2 gap-1 bg-white dark:bg-slate-950">
+                      <div className="grid grid-cols-2 gap-1 bg-slate-200 dark:bg-slate-800">
                         {post.items.map((entry) =>
                           renderTile(entry, 'aspect-[3/4] sm:aspect-[4/5]')
                         )}
                       </div>
                     ) : count === 3 ? (
-                      <div className="grid grid-cols-2 grid-rows-2 gap-1 h-[360px] sm:h-[460px] bg-white dark:bg-slate-950">
+                      <div className="grid grid-cols-2 grid-rows-2 gap-1 h-[400px] sm:h-[520px] bg-slate-200 dark:bg-slate-800">
                         {renderTile(post.items[0], 'row-span-2 h-full')}
                         {renderTile(post.items[1], 'h-full')}
                         {renderTile(post.items[2], 'h-full')}
                       </div>
                     ) : count === 4 ? (
-                      <div className="grid grid-cols-2 grid-rows-3 gap-1 h-[390px] sm:h-[490px] bg-white dark:bg-slate-950">
+                      <div className="grid grid-cols-2 grid-rows-3 gap-1 h-[420px] sm:h-[540px] bg-slate-200 dark:bg-slate-800">
                         {renderTile(post.items[0], 'row-span-3 h-full')}
                         {renderTile(post.items[1], 'h-full')}
                         {renderTile(post.items[2], 'h-full')}
                         {renderTile(post.items[3], 'h-full')}
                       </div>
                     ) : (
-                      <div className="space-y-1 bg-white dark:bg-slate-950">
-                        <div className="grid grid-cols-2 gap-1 h-[195px] sm:h-[240px]">
+                      <div className="space-y-1 bg-slate-200 dark:bg-slate-800">
+                        <div className="grid grid-cols-2 gap-1 h-[210px] sm:h-[260px]">
                           {renderTile(post.items[0], 'h-full')}
                           {renderTile(post.items[1], 'h-full')}
                         </div>
-                        <div className="grid grid-cols-3 gap-1 h-[135px] sm:h-[175px]">
+                        <div className="grid grid-cols-3 gap-1 h-[150px] sm:h-[195px]">
                           {renderTile(post.items[2], 'h-full')}
                           {renderTile(post.items[3], 'h-full')}
                           {renderTile(post.items[4], 'h-full', count > 5 ? count - 5 : 0)}
