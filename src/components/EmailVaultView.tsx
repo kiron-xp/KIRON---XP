@@ -475,7 +475,7 @@ export function EmailVaultView({
                       </p>
 
                       {caption && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
+                        <p className="text-sm sm:text-base font-medium text-slate-900 dark:text-white break-words">
                           {caption}
                         </p>
                       )}

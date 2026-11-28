@@ -1519,7 +1519,7 @@ export function SecurityBackupView({
                         </p>
 
                         {item.note && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
+                          <p className="text-sm sm:text-base font-medium text-slate-900 dark:text-white break-words">
                             {item.note}
                           </p>
                         )}
@@ -1744,7 +1744,7 @@ export function SecurityBackupView({
                       </p>
                     )}
                     {post.note && (
-                      <p className="text-sm text-slate-800 dark:text-slate-100 break-words leading-snug whitespace-pre-wrap">
+                      <p className="text-sm sm:text-base font-medium text-slate-900 dark:text-white break-words leading-snug whitespace-pre-wrap">
                         {post.note}
                       </p>
                     )}
@@ -1932,7 +1932,7 @@ export function SecurityBackupView({
                         </p>
                       )}
                       {item.note && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
+                        <p className="text-sm sm:text-base font-medium text-slate-900 dark:text-white break-words">
                           {item.note}
                         </p>
                       )}
@@ -1952,7 +1952,7 @@ export function SecurityBackupView({
                           </span>
                         </div>
                         {item.note && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400 break-words leading-relaxed">
+                          <p className="text-sm sm:text-base font-medium text-slate-900 dark:text-white break-words leading-relaxed">
                             {item.note}
                           </p>
                         )}
