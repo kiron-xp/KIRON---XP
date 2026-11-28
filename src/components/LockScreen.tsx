@@ -5,7 +5,7 @@ import { Language, SiteEntryConfig, ThemeMode } from '../types';
 import { resolveSocialAppAction, SOCIAL_APPS, SocialAppLogoSvg } from './SocialAppIcons';
 
 const APP_LOGO_URL = `${import.meta.env.BASE_URL}favicon-192x192.png`;
-const CENTER_LOGO_URL = `${import.meta.env.BASE_URL}og-image.jpg`;
+const CENTER_LOGO_URL = `${import.meta.env.BASE_URL}rabbit-card.jpg`;
 const GATE_WALLPAPER_URL = `${import.meta.env.BASE_URL}gate-wallpaper.webp`;
 
 const OVERLAY_CLASS_MAP: Record<number, string> = {
@@ -196,12 +196,12 @@ export function LockScreen({
           {isSiteGate ? (
             showCenterLogo && (
               <div className="flex items-center justify-center mb-2.5">
-                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
                   <img
                     src={CENTER_LOGO_URL}
                     alt="KIRON-XP"
-                    width={1254}
-                    height={1254}
+                    width={1448}
+                    height={1086}
                     fetchPriority="high"
                     className="w-full h-full object-cover object-center block"
                   />
