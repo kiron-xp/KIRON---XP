@@ -490,13 +490,6 @@ export function EmailVaultView({
                       <span className="truncate font-mono">
                         {isRevealed && entry.password ? entry.password : 'SADIYA'}
                       </span>
-                      {entry.password && (
-                        isRevealed ? (
-                          <EyeOff className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                        ) : (
-                          <Eye className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                        )
-                      )}
                     </button>
 
                     <button

@@ -313,8 +313,7 @@ export function SecurityBackupView({
 
   const handleSelectFilesForComposer = (
     e: React.ChangeEvent<HTMLInputElement>,
-    kind: 'photo' | 'screenshot' | 'video' | 'apk',
-    options?: { keepToolbarClosed?: boolean }
+    kind: 'photo' | 'screenshot' | 'video' | 'apk'
   ) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
@@ -330,9 +329,7 @@ export function SecurityBackupView({
 
     setNumberFormOpen(false);
     clearPendingUpload();
-    if (!options?.keepToolbarClosed) {
-      setUploadPanelOpen(true);
-    }
+    setUploadPanelOpen(true);
     const previewUrls =
       kind === 'photo' || kind === 'screenshot'
         ? files.map((file) => URL.createObjectURL(file))
@@ -791,21 +788,15 @@ export function SecurityBackupView({
 
   return (
     <div className="space-y-6">
-      {/* Upload / Multi-Photo Composer Panel */}
-      {(uploadPanelOpen ||
-        Boolean(pendingUpload) ||
-        uploading ||
-        Boolean(uploadError) ||
-        numberFormOpen) && (
+      {/* Upload Panel (shown exclusively via Hamburger Menu -> XP - 4) */}
+      {uploadPanelOpen && (
         <section
           ref={uploadSectionRef}
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 space-y-4 shadow-xs"
         >
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {!uploadPanelOpen && pendingUpload?.kind === 'photo'
-                ? t.mediaAddMultiplePhotosBtn
-                : t.menuAddMedia}
+              {t.menuAddMedia}
             </span>
             <button
               type="button"
@@ -822,8 +813,7 @@ export function SecurityBackupView({
             </button>
           </div>
 
-          {uploadPanelOpen && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
               <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
                 <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{t.mediaUploadPhotoBtn}</span>
@@ -890,8 +880,7 @@ export function SecurityBackupView({
                   className="sr-only"
                 />
               </label>
-            </div>
-          )}
+          </div>
 
           {pendingUpload && (
             <form
@@ -1288,29 +1277,6 @@ export function SecurityBackupView({
           </div>
         )}
 
-        {/* Direct Multi-Photo Gallery Add Bar inside PROFILE -> PHOTO */}
-        {filterKind === 'photo' && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 shadow-xs">
-            <span className="text-xs text-slate-600 dark:text-slate-300">
-              {t.mediaFilterPhoto} ({counts.photo})
-            </span>
-            <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs">
-              <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-              <span>{t.mediaAddMultiplePhotosBtn}</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                disabled={uploading}
-                onChange={(e) =>
-                  handleSelectFilesForComposer(e, 'photo', { keepToolbarClosed: true })
-                }
-                className="sr-only"
-              />
-            </label>
-          </div>
-        )}
-
         {/* Category Content */}
         {categoryItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-8 text-center space-y-2 shadow-xs">
@@ -1322,7 +1288,7 @@ export function SecurityBackupView({
             </p>
           </div>
         ) : filterKind === 'apk' ? (
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
+          <div className="space-y-3">
             {visibleApkItems.map((item) => {
               const isConfirming = confirmDeleteId === item.id;
               const isDownloading = Boolean(downloadingIds[item.id]);
@@ -1333,7 +1299,10 @@ export function SecurityBackupView({
               const apkCategoryLine = item.category ? `${item.category} - APK` : 'APK';
 
               return (
-                <div key={item.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
+                <div
+                  key={item.id}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 space-y-3 transition-colors hover:border-slate-300 dark:hover:border-slate-700"
+                >
                   <div className="flex items-center justify-between gap-3 sm:gap-5">
                     {/* Left: Gallery Photo + Center Info (MD KIRON MONDAL -> CATEGORY - APK -> Title -> Caption) */}
                     <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
@@ -1386,7 +1355,7 @@ export function SecurityBackupView({
                             {openApkMenuId === item.id && (
                               <div
                                 role="menu"
-                                className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-slate-950/95 backdrop-blur-md shadow-2xl py-1.5 z-40"
+                                className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl py-1.5 z-40"
                               >
                                 <button
                                   type="button"
@@ -1395,13 +1364,13 @@ export function SecurityBackupView({
                                     setOpenApkMenuId(null);
                                     openEditApkModal(item);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-white/10 text-left transition-colors whitespace-nowrap"
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5 text-slate-400 dark:text-white/60 shrink-0" />
+                                  <Edit3 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                   <span>{t.editAccount}</span>
                                 </button>
 
-                                <div className="my-1 border-t border-slate-200 dark:border-white/15" />
+                                <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
 
                                 <button
                                   type="button"
@@ -1410,7 +1379,7 @@ export function SecurityBackupView({
                                     setOpenApkMenuId(null);
                                     setConfirmDeleteId(isConfirming ? null : item.id);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15 text-left transition-colors whitespace-nowrap"
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left transition-colors whitespace-nowrap"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 shrink-0" />
                                   <span>{t.deleteAccount}</span>
@@ -1436,14 +1405,14 @@ export function SecurityBackupView({
                       </div>
                     </div>
 
-                    {/* Right Side: Tapping SADIYA starts APK download */}
-                    <div className="self-center flex flex-col items-end gap-1 shrink-0 max-w-[140px]">
+                    {/* Right Side: Bordered SADIYA + Download panel matching EmailVaultView */}
+                    <div className="self-center flex flex-col items-center gap-2 p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-slate-50/80 dark:bg-slate-950/60 shrink-0 min-w-[116px] max-w-[175px]">
                       <button
                         type="button"
                         disabled={isDownloading}
                         onClick={() => handleDownloadMedia(item)}
                         title={t.mediaDownloadBtn}
-                        className="inline-flex items-center justify-end gap-1.5 px-1.5 py-1 rounded-lg bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-0 text-sm font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 disabled:opacity-60 transition-colors cursor-pointer max-w-full"
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200/90 dark:border-emerald-800/70 bg-white dark:bg-slate-900 text-xs sm:text-sm font-bold tracking-wider text-emerald-700 dark:text-emerald-400 transition-colors hover:border-emerald-400 dark:hover:border-emerald-600 disabled:opacity-60 cursor-pointer"
                       >
                         {isDownloading && (
                           <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
@@ -1452,11 +1421,23 @@ export function SecurityBackupView({
                           {isDownloading ? t.mediaDownloadingApk : 'SADIYA'}
                         </span>
                       </button>
-                      {item.fileSize ? (
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums px-1.5">
-                          {formatFileSize(item.fileSize)}
+
+                      <button
+                        type="button"
+                        disabled={isDownloading}
+                        onClick={() => handleDownloadMedia(item)}
+                        title={t.mediaDownloadBtn}
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-slate-950 disabled:opacity-60 text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap cursor-pointer"
+                      >
+                        {isDownloading ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5 shrink-0" />
+                        )}
+                        <span>
+                          {item.fileSize ? formatFileSize(item.fileSize) : t.mediaDownloadBtn}
                         </span>
-                      ) : null}
+                      </button>
                     </div>
                   </div>
 
