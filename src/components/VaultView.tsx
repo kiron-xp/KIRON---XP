@@ -210,7 +210,7 @@ export function VaultView({
           {t.noSearchMatch}
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
+        <div className="space-y-3">
           {filteredAccounts.map((acc) => {
             const state = otpMap[acc.id] ?? {
               code: acc.digits === 8 ? '--------' : '------',
@@ -220,11 +220,14 @@ export function VaultView({
             const isConfirmingDelete = confirmDeleteId === acc.id;
 
             return (
-              <div key={acc.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
+              <div
+                key={acc.id}
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 space-y-3 transition-colors hover:border-slate-300 dark:hover:border-slate-700"
+              >
                 <div className="flex items-center justify-between gap-3 sm:gap-5">
                   {/* Left Side: Avatar+Timer & Account Info */}
                   <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
-                    <div className="flex flex-col items-center gap-1.5 shrink-0">
+                    <div className="flex flex-col items-center gap-2 shrink-0">
                       <AccountAvatar issuer={acc.issuer} avatarDataUrl={acc.avatarDataUrl} size="lg" />
                       {acc.type === 'totp' ? (
                         <CountdownRing
@@ -358,26 +361,33 @@ export function VaultView({
                     </div>
                   </div>
 
-                  {/* Right Side: OTP Code & Copy Button */}
+                  {/* Right Side: Bordered Structured 6/8-Digit OTP & Copy Panel */}
                   {(() => {
                     const [partA, partB] = splitOtpGroups(state.code);
                     const isExpiring = acc.type === 'totp' && state.remainingSeconds <= 5;
-                    const digitTextClass = isExpiring
-                      ? 'text-amber-600 dark:text-amber-400'
-                      : 'text-emerald-600 dark:text-emerald-400';
+                    const frameBorderClass = isExpiring
+                      ? 'border-amber-300 dark:border-amber-800 bg-amber-50/40 dark:bg-amber-950/25'
+                      : 'border-emerald-200 dark:border-emerald-800/80 bg-slate-50/80 dark:bg-slate-950/60';
+                    const digitBoxClass = isExpiring
+                      ? 'border-amber-200 dark:border-amber-800/80 bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-300'
+                      : 'border-emerald-200/90 dark:border-emerald-800/70 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400';
 
                     return (
-                      <div className="self-center flex flex-col items-end gap-1.5 shrink-0">
+                      <div
+                        className={`self-center flex flex-col items-center gap-2 p-2 rounded-xl border transition-colors shrink-0 ${frameBorderClass}`}
+                      >
                         <button
                           type="button"
                           onClick={() => handleCopyCode(acc.id, state.code)}
                           title={t.copyCode}
-                          className={`flex items-center justify-center gap-1 px-1 py-0.5 bg-transparent border-0 font-mono text-xl sm:text-2xl font-extrabold tracking-[0.12em] tabular-nums leading-none cursor-pointer select-all transition-colors ${digitTextClass}`}
+                          className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border font-mono text-lg sm:text-2xl font-extrabold tracking-[0.14em] tabular-nums leading-none cursor-pointer select-all transition-colors ${digitBoxClass}`}
                         >
                           <span>{partA}</span>
                           {partB && (
                             <>
-                              <span className="text-slate-300 dark:text-slate-600 font-normal tracking-normal">·</span>
+                              <span className="text-slate-300 dark:text-slate-600 font-normal tracking-normal">
+                                ·
+                              </span>
                               <span>{partB}</span>
                             </>
                           )}
@@ -387,10 +397,10 @@ export function VaultView({
                           type="button"
                           onClick={() => handleCopyCode(acc.id, state.code)}
                           title={t.copyCode}
-                          className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
+                          className={`w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
                             isCopied
-                              ? 'border-emerald-500 bg-emerald-600 text-white'
-                              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white text-slate-700 dark:text-slate-200'
+                              ? 'border-emerald-600 bg-emerald-600 text-white'
+                              : 'border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-slate-950'
                           }`}
                         >
                           {isCopied ? (

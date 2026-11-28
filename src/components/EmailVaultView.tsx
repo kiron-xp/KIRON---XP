@@ -354,7 +354,7 @@ export function EmailVaultView({
           {t.emailNoMatch}
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
+        <div className="space-y-3">
           {filteredEmails.map((entry) => {
             const isRevealed = Boolean(revealedIds[entry.id]);
             const caption = entry.note ?? entry.label;
@@ -365,10 +365,13 @@ export function EmailVaultView({
             const rightValueToCopy = entry.password || entry.email;
 
             return (
-              <div key={entry.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
+              <div
+                key={entry.id}
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 space-y-3 transition-colors hover:border-slate-300 dark:hover:border-slate-700"
+              >
                 <div className="flex items-center justify-between gap-3 sm:gap-5">
                   <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
-                    <div className="flex flex-col items-center gap-1.5 shrink-0">
+                    <div className="flex flex-col items-center gap-2 shrink-0">
                       <AccountAvatar
                         issuer={entry.email}
                         avatarDataUrl={entry.avatarDataUrl}
@@ -380,7 +383,7 @@ export function EmailVaultView({
                         title={entry.email}
                         className={`min-w-[56px] inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-semibold transition-colors whitespace-nowrap shrink-0 ${
                           isEmailCopied
-                            ? 'border-emerald-500 bg-emerald-600 text-white'
+                            ? 'border-emerald-600 bg-emerald-600 text-white'
                             : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
                         }`}
                       >
@@ -474,24 +477,24 @@ export function EmailVaultView({
                     </div>
                   </div>
 
-                  {/* Right Side: SADIYA / Password + Copy button */}
-                  <div className="self-center flex flex-col items-end gap-1.5 shrink-0 max-w-[175px]">
+                  {/* Right Side: SADIYA (hides password inside) + Copy button below */}
+                  <div className="self-center flex flex-col items-center gap-2 p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-slate-50/80 dark:bg-slate-950/60 shrink-0 min-w-[116px] max-w-[175px]">
                     <button
                       type="button"
                       onClick={() => {
                         if (entry.password) toggleReveal(entry.id);
                       }}
                       title={entry.password ? 'Show / Hide password' : 'SADIYA'}
-                      className="inline-flex items-center justify-end gap-1.5 px-1 py-0.5 bg-transparent border-0 text-sm font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400 transition-colors hover:text-emerald-700 dark:hover:text-emerald-300 max-w-full"
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200/90 dark:border-emerald-800/70 bg-white dark:bg-slate-900 text-xs sm:text-sm font-bold tracking-wider text-emerald-700 dark:text-emerald-400 transition-colors hover:border-emerald-400 dark:hover:border-emerald-600"
                     >
                       <span className="truncate font-mono">
                         {isRevealed && entry.password ? entry.password : 'SADIYA'}
                       </span>
                       {entry.password && (
                         isRevealed ? (
-                          <EyeOff className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                          <EyeOff className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                         ) : (
-                          <Eye className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                          <Eye className="w-3.5 h-3.5 shrink-0 text-slate-400" />
                         )
                       )}
                     </button>
@@ -499,10 +502,10 @@ export function EmailVaultView({
                     <button
                       type="button"
                       onClick={() => handleCopy(rightValueToCopy, copyKey)}
-                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
+                      className={`w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
                         isCopied
-                          ? 'border-emerald-500 bg-emerald-600 text-white'
-                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white text-slate-700 dark:text-slate-200'
+                          ? 'border-emerald-600 bg-emerald-600 text-white'
+                          : 'border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 dark:hover:bg-emerald-500 dark:hover:text-slate-950'
                       }`}
                     >
                       {isCopied ? (
