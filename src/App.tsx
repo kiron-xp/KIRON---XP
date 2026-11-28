@@ -70,7 +70,7 @@ import {
   VaultData,
 } from './types';
 
-const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
+const APP_LOGO_URL = `${import.meta.env.BASE_URL}favicon-192x192.png`;
 
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();

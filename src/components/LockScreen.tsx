@@ -4,9 +4,9 @@ import { Translations } from '../lib/i18n';
 import { Language, SiteEntryConfig, ThemeMode } from '../types';
 import { resolveSocialAppAction, SOCIAL_APPS, SocialAppLogoSvg } from './SocialAppIcons';
 
-const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
+const APP_LOGO_URL = `${import.meta.env.BASE_URL}favicon-192x192.png`;
 const CENTER_LOGO_URL = `${import.meta.env.BASE_URL}og-image.jpg`;
-const GATE_WALLPAPER_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_0000000063188246b2dc4e77b1130652_ad6f1a5e.webp`;
+const GATE_WALLPAPER_URL = `${import.meta.env.BASE_URL}gate-wallpaper.webp`;
 
 const OVERLAY_CLASS_MAP: Record<number, string> = {
   0: 'bg-black/0',
@@ -196,12 +196,12 @@ export function LockScreen({
           {isSiteGate ? (
             showCenterLogo && (
               <div className="flex items-center justify-center mb-2.5">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden flex items-center justify-center shadow-xl ring-1 ring-white/30">
                   <img
                     src={CENTER_LOGO_URL}
                     alt="KIRON-XP"
-                    width={1448}
-                    height={1086}
+                    width={1254}
+                    height={1254}
                     fetchPriority="high"
                     className="w-full h-full object-cover object-center block"
                   />
