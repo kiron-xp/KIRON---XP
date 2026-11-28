@@ -12,6 +12,7 @@ import {
   Maximize2,
   Package,
   Play,
+  Plus,
   Sparkles,
   Trash2,
   Upload,
@@ -49,7 +50,7 @@ interface PendingMediaUpload {
   title: string;
   caption: string;
   category?: string;
-  previewUrl?: string;
+  previewUrls: string[];
   thumbnailDataUrl?: string;
 }
 
@@ -176,15 +177,24 @@ export function SecurityBackupView({
   const [loadingMediaIds, setLoadingMediaIds] = useState<Record<string, boolean>>({});
   const mediaUrlsRef = useRef<Record<string, string>>({});
   const loadingMediaIdsRef = useRef<Record<string, boolean>>({});
-  const pendingPreviewRef = useRef<string | undefined>(undefined);
+  const pendingPreviewsRef = useRef<string[]>([]);
+  const uploadSectionRef = useRef<HTMLElement | null>(null);
   mediaUrlsRef.current = mediaUrls;
   loadingMediaIdsRef.current = loadingMediaIds;
-  pendingPreviewRef.current = pendingUpload?.previewUrl;
+  pendingPreviewsRef.current = pendingUpload?.previewUrls ?? [];
+
+  const revokeBlobUrls = (urls: string[]) => {
+    for (const url of urls) {
+      if (url && url.startsWith('blob:')) {
+        URL.revokeObjectURL(url);
+      }
+    }
+  };
 
   const clearPendingUpload = () => {
     setPendingUpload((prev) => {
-      if (prev?.previewUrl && prev.previewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(prev.previewUrl);
+      if (prev?.previewUrls?.length) {
+        revokeBlobUrls(prev.previewUrls);
       }
       return null;
     });
@@ -201,9 +211,7 @@ export function SecurityBackupView({
 
   useEffect(() => {
     return () => {
-      if (pendingPreviewRef.current && pendingPreviewRef.current.startsWith('blob:')) {
-        URL.revokeObjectURL(pendingPreviewRef.current);
-      }
+      revokeBlobUrls(pendingPreviewsRef.current);
     };
   }, []);
 
@@ -305,7 +313,8 @@ export function SecurityBackupView({
 
   const handleSelectFilesForComposer = (
     e: React.ChangeEvent<HTMLInputElement>,
-    kind: 'photo' | 'screenshot' | 'video' | 'apk'
+    kind: 'photo' | 'screenshot' | 'video' | 'apk',
+    options?: { keepToolbarClosed?: boolean }
   ) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = '';
@@ -321,17 +330,71 @@ export function SecurityBackupView({
 
     setNumberFormOpen(false);
     clearPendingUpload();
-    setUploadPanelOpen(true);
-    const previewUrl =
-      kind === 'photo' || kind === 'screenshot' ? URL.createObjectURL(files[0]) : undefined;
+    if (!options?.keepToolbarClosed) {
+      setUploadPanelOpen(true);
+    }
+    const previewUrls =
+      kind === 'photo' || kind === 'screenshot'
+        ? files.map((file) => URL.createObjectURL(file))
+        : [];
     setPendingUpload({
       kind,
       files,
       title: '',
       caption: '',
       category: kind === 'apk' ? 'WHATSAPP' : undefined,
-      previewUrl,
+      previewUrls,
       thumbnailDataUrl: undefined,
+    });
+    window.setTimeout(() => {
+      uploadSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 60);
+  };
+
+  const handleAppendMorePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const addedFiles = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (addedFiles.length === 0) return;
+
+    setUploadError('');
+    for (const file of addedFiles) {
+      if (file.size > MAX_MEDIA_FILE_BYTES) {
+        setUploadError(t.mediaVideoTooLarge);
+        return;
+      }
+    }
+
+    const addedPreviews = addedFiles.map((file) => URL.createObjectURL(file));
+    setPendingUpload((prev) => {
+      if (!prev || (prev.kind !== 'photo' && prev.kind !== 'screenshot')) {
+        revokeBlobUrls(addedPreviews);
+        return prev;
+      }
+      return {
+        ...prev,
+        files: [...prev.files, ...addedFiles],
+        previewUrls: [...prev.previewUrls, ...addedPreviews],
+      };
+    });
+  };
+
+  const handleRemovePendingFile = (index: number) => {
+    setPendingUpload((prev) => {
+      if (!prev) return null;
+      const targetUrl = prev.previewUrls[index];
+      if (targetUrl && targetUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(targetUrl);
+      }
+      const nextFiles = prev.files.filter((_, i) => i !== index);
+      const nextPreviews = prev.previewUrls.filter((_, i) => i !== index);
+      if (nextFiles.length === 0) {
+        return null;
+      }
+      return {
+        ...prev,
+        files: nextFiles,
+        previewUrls: nextPreviews,
+      };
     });
   };
 
@@ -345,13 +408,11 @@ export function SecurityBackupView({
       const compressed = await compressImageForVault(imgFile, 800, 180000);
       setPendingUpload((prev) => {
         if (!prev || prev.kind !== 'apk') return prev;
-        if (prev.previewUrl && prev.previewUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(prev.previewUrl);
-        }
+        revokeBlobUrls(prev.previewUrls);
         return {
           ...prev,
           thumbnailDataUrl: compressed,
-          previewUrl: compressed,
+          previewUrls: [compressed],
         };
       });
     } catch {
@@ -362,13 +423,11 @@ export function SecurityBackupView({
   const handleRemoveApkThumbnail = () => {
     setPendingUpload((prev) => {
       if (!prev || prev.kind !== 'apk') return prev;
-      if (prev.previewUrl && prev.previewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(prev.previewUrl);
-      }
+      revokeBlobUrls(prev.previewUrls);
       return {
         ...prev,
         thumbnailDataUrl: undefined,
-        previewUrl: undefined,
+        previewUrls: [],
       };
     });
   };
@@ -732,12 +791,21 @@ export function SecurityBackupView({
 
   return (
     <div className="space-y-6">
-      {/* Upload Panel (shown exclusively via Hamburger Menu -> XP - 4) */}
-      {uploadPanelOpen && (
-        <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 space-y-4 shadow-xs">
+      {/* Upload / Multi-Photo Composer Panel */}
+      {(uploadPanelOpen ||
+        Boolean(pendingUpload) ||
+        uploading ||
+        Boolean(uploadError) ||
+        numberFormOpen) && (
+        <section
+          ref={uploadSectionRef}
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 space-y-4 shadow-xs"
+        >
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {t.menuAddMedia}
+              {!uploadPanelOpen && pendingUpload?.kind === 'photo'
+                ? t.mediaAddMultiplePhotosBtn
+                : t.menuAddMedia}
             </span>
             <button
               type="button"
@@ -754,119 +822,189 @@ export function SecurityBackupView({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
-              <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>{t.mediaUploadPhotoBtn}</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                disabled={uploading}
-                onChange={(e) => handleSelectFilesForComposer(e, 'photo')}
-                className="sr-only"
-              />
-            </label>
+          {uploadPanelOpen && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+              <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
+                <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>{t.mediaUploadPhotoBtn}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={uploading}
+                  onChange={(e) => handleSelectFilesForComposer(e, 'photo')}
+                  className="sr-only"
+                />
+              </label>
 
-            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:border-violet-300 dark:hover:border-violet-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
-              <Film className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
-              <span>{t.mediaUploadVideoBtn}</span>
-              <input
-                type="file"
-                accept="video/*"
-                disabled={uploading}
-                onChange={(e) => handleSelectFilesForComposer(e, 'video')}
-                className="sr-only"
-              />
-            </label>
+              <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:border-violet-300 dark:hover:border-violet-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
+                <Film className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
+                <span>{t.mediaUploadVideoBtn}</span>
+                <input
+                  type="file"
+                  accept="video/*"
+                  disabled={uploading}
+                  onChange={(e) => handleSelectFilesForComposer(e, 'video')}
+                  className="sr-only"
+                />
+              </label>
 
-            <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:border-sky-300 dark:hover:border-sky-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
-              <Sparkles className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
-              <span>{t.mediaUploadScreenshotBtn}</span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                disabled={uploading}
-                onChange={(e) => handleSelectFilesForComposer(e, 'screenshot')}
-                className="sr-only"
-              />
-            </label>
+              <label className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-sky-50 dark:hover:bg-sky-950/40 hover:border-sky-300 dark:hover:border-sky-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
+                <Sparkles className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                <span>{t.mediaUploadScreenshotBtn}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={uploading}
+                  onChange={(e) => handleSelectFilesForComposer(e, 'screenshot')}
+                  className="sr-only"
+                />
+              </label>
 
-            <button
-              type="button"
-              disabled={uploading}
-              onClick={() => {
-                setUploadError('');
-                clearPendingUpload();
-                setNumberFormOpen((v) => !v);
-              }}
-              className={`inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
-                numberFormOpen
-                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-300 dark:hover:border-amber-700 text-slate-800 dark:text-slate-100'
-              }`}
-            >
-              <Hash className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>{t.mediaAddNumberBtn}</span>
-            </button>
-
-            <label className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-300 dark:hover:border-teal-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
-              <Package className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-              <span>{t.mediaUploadApkBtn}</span>
-              <input
-                type="file"
+              <button
+                type="button"
                 disabled={uploading}
-                onChange={(e) => handleSelectFilesForComposer(e, 'apk')}
-                className="sr-only"
-              />
-            </label>
-          </div>
+                onClick={() => {
+                  setUploadError('');
+                  clearPendingUpload();
+                  setNumberFormOpen((v) => !v);
+                }}
+                className={`inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-colors whitespace-nowrap ${
+                  numberFormOpen
+                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-300 dark:hover:border-amber-700 text-slate-800 dark:text-slate-100'
+                }`}
+              >
+                <Hash className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>{t.mediaAddNumberBtn}</span>
+              </button>
+
+              <label className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-300 dark:hover:border-teal-700 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer transition-colors whitespace-nowrap">
+                <Package className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                <span>{t.mediaUploadApkBtn}</span>
+                <input
+                  type="file"
+                  disabled={uploading}
+                  onChange={(e) => handleSelectFilesForComposer(e, 'apk')}
+                  className="sr-only"
+                />
+              </label>
+            </div>
+          )}
 
           {pendingUpload && (
             <form
               onSubmit={handleConfirmMediaUpload}
               className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 space-y-3"
             >
-              <div className="flex items-center gap-3">
-                {pendingUpload.previewUrl ? (
-                  <img
-                    src={pendingUpload.previewUrl}
-                    alt={pendingUpload.files[0]?.name}
-                    className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
-                  />
-                ) : pendingUpload.kind === 'apk' ? (
-                  <div className="w-14 h-14 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-300 flex items-center justify-center shrink-0">
-                    <Package className="w-6 h-6" />
-                  </div>
-                ) : (
-                  <div className="w-14 h-14 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 flex items-center justify-center shrink-0">
-                    <Film className="w-6 h-6" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-semibold shrink-0">
-                      {getKindBadgeLabel(pendingUpload.kind)}
-                    </span>
-                    <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
-                      {pendingUpload.kind === 'apk'
-                        ? pendingUpload.title.trim() ||
-                          stripBaseApkName(pendingUpload.files[0]?.name) ||
-                          pendingUpload.category ||
-                          'APK App'
-                        : pendingUpload.files.length > 1
-                        ? `${pendingUpload.files.length} files`
-                        : pendingUpload.files[0]?.name}
+              {(pendingUpload.kind === 'photo' || pendingUpload.kind === 'screenshot') ? (
+                <div className="space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-semibold shrink-0">
+                        {getKindBadgeLabel(pendingUpload.kind)}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+                        {pendingUpload.files.length} {t.mediaSelectedPhotosLabel}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                      {formatFileSize(
+                        pendingUpload.files.reduce((sum, f) => sum + f.size, 0)
+                      )}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
-                    {formatFileSize(
-                      pendingUpload.files.reduce((sum, f) => sum + f.size, 0)
-                    )}
-                  </p>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                    {pendingUpload.files.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${file.size}-${idx}`}
+                        className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900"
+                      >
+                        {pendingUpload.previewUrls[idx] ? (
+                          <img
+                            src={pendingUpload.previewUrls[idx]}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                        )}
+                        <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-slate-950/75 text-white text-[10px] font-semibold tabular-nums">
+                          {idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={uploading}
+                          onClick={() => handleRemovePendingFile(idx)}
+                          aria-label={t.deleteAccount}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-slate-950/75 hover:bg-red-600 text-white transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+
+                    <label className="aspect-square rounded-lg border-2 border-dashed border-emerald-400/70 dark:border-emerald-700 bg-white/80 dark:bg-slate-900/70 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex flex-col items-center justify-center gap-1 p-2 text-center cursor-pointer transition-colors">
+                      <Plus className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 leading-tight">
+                        {t.mediaAddMorePhotosBtn}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        disabled={uploading}
+                        onChange={handleAppendMorePhotos}
+                        className="sr-only"
+                      />
+                    </label>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  {pendingUpload.previewUrls[0] ? (
+                    <img
+                      src={pendingUpload.previewUrls[0]}
+                      alt={pendingUpload.files[0]?.name}
+                      className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                    />
+                  ) : pendingUpload.kind === 'apk' ? (
+                    <div className="w-14 h-14 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-300 flex items-center justify-center shrink-0">
+                      <Package className="w-6 h-6" />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-lg bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-300 flex items-center justify-center shrink-0">
+                      <Film className="w-6 h-6" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-semibold shrink-0">
+                        {getKindBadgeLabel(pendingUpload.kind)}
+                      </span>
+                      <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                        {pendingUpload.kind === 'apk'
+                          ? pendingUpload.title.trim() ||
+                            stripBaseApkName(pendingUpload.files[0]?.name) ||
+                            pendingUpload.category ||
+                            'APK App'
+                          : pendingUpload.files.length > 1
+                          ? `${pendingUpload.files.length} files`
+                          : pendingUpload.files[0]?.name}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
+                      {formatFileSize(
+                        pendingUpload.files.reduce((sum, f) => sum + f.size, 0)
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {pendingUpload.kind === 'apk' && (
                 <>
@@ -987,7 +1125,11 @@ export function SecurityBackupView({
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  <span>{t.mediaConfirmUploadBtn}</span>
+                  <span>
+                    {pendingUpload.kind === 'photo' || pendingUpload.kind === 'screenshot'
+                      ? `${t.mediaPostBtn} (${pendingUpload.files.length})`
+                      : t.mediaConfirmUploadBtn}
+                  </span>
                 </button>
               </div>
             </form>
@@ -1143,6 +1285,29 @@ export function SecurityBackupView({
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {/* Direct Multi-Photo Gallery Add Bar inside PROFILE -> PHOTO */}
+        {filterKind === 'photo' && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2.5 shadow-xs">
+            <span className="text-xs text-slate-600 dark:text-slate-300">
+              {t.mediaFilterPhoto} ({counts.photo})
+            </span>
+            <label className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer transition-colors shadow-xs">
+              <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>{t.mediaAddMultiplePhotosBtn}</span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={uploading}
+                onChange={(e) =>
+                  handleSelectFilesForComposer(e, 'photo', { keepToolbarClosed: true })
+                }
+                className="sr-only"
+              />
+            </label>
           </div>
         )}
 

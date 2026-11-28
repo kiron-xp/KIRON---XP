@@ -11,27 +11,27 @@ export function CountdownRing({ remainingSeconds, period, secondsShort }: Countd
   const isCritical = remainingSeconds <= 3;
 
   const barColorClass = isCritical
-    ? 'bg-red-400'
+    ? 'bg-red-500'
     : isUrgent
-    ? 'bg-amber-400'
-    : 'bg-emerald-400';
+    ? 'bg-amber-500'
+    : 'bg-emerald-500';
 
   const textColorClass = isCritical
-    ? 'text-red-300'
+    ? 'text-red-600 dark:text-red-400'
     : isUrgent
-    ? 'text-amber-300'
-    : 'text-white';
+    ? 'text-amber-600 dark:text-amber-400'
+    : 'text-slate-700 dark:text-slate-200';
 
   return (
     <div
-      className="w-14 px-1 py-0.5 bg-transparent flex flex-col items-center gap-1 shrink-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)]"
+      className="w-14 px-1 py-0.5 bg-transparent flex flex-col items-center gap-1 shrink-0"
       aria-label={`${remainingSeconds}${secondsShort}`}
     >
       <span className={`text-xs font-mono font-bold tabular-nums leading-none ${textColorClass}`}>
         {remainingSeconds}
         {secondsShort}
       </span>
-      <div className="w-full h-1 rounded-full bg-white/25 overflow-hidden">
+      <div className="w-full h-1 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
         <div
           className={`h-full w-full origin-left transition-transform duration-300 ease-linear ${barColorClass}`}
           style={{ transform: `scaleX(${fraction})` }}

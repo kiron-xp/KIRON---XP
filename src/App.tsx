@@ -5,14 +5,12 @@ import {
   FilePlus,
   Globe,
   ImagePlus,
-  Loader2,
   Lock,
   Mail,
   MailPlus,
   Menu,
   Moon,
   Plus,
-  RotateCcw,
   ShieldCheck,
   SlidersHorizontal,
   StickyNote,
@@ -73,33 +71,6 @@ import {
 } from './types';
 
 const APP_LOGO_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_000000002b0482468abe72240ce92705_43f8ec1c.webp`;
-const DEFAULT_WALLPAPER_URL = `${import.meta.env.BASE_URL}assets/aistudio/file_0000000063188246b2dc4e77b1130652_ad6f1a5e.webp`;
-
-const INSIDE_OVERLAY_CLASS_MAP: Record<number, string> = {
-  0: 'bg-black/0',
-  10: 'bg-black/10',
-  20: 'bg-black/20',
-  30: 'bg-black/30',
-  35: 'bg-black/35',
-  45: 'bg-black/45',
-  60: 'bg-black/60',
-  75: 'bg-black/75',
-};
-
-function getInsideOverlayClass(opacity?: number): string {
-  const steps = [0, 10, 20, 30, 35, 45, 60, 75];
-  const val = typeof opacity === 'number' && Number.isFinite(opacity) ? opacity : 30;
-  let closest = 30;
-  let minDiff = Infinity;
-  for (const step of steps) {
-    const diff = Math.abs(step - val);
-    if (diff < minDiff) {
-      minDiff = diff;
-      closest = step;
-    }
-  }
-  return INSIDE_OVERLAY_CLASS_MAP[closest] ?? 'bg-black/30';
-}
 
 function dedupeById<T extends { id: string }>(items: T[]): T[] {
   const seen = new Set<string>();
@@ -139,9 +110,6 @@ export default function App() {
   const [editingAccount, setEditingAccount] = useState<AccountEntry | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sadiyaModalOpen, setSadiyaModalOpen] = useState(false);
-  const [savingInsideWallpaper, setSavingInsideWallpaper] = useState(false);
-  const sadiyaFileInputRef = useRef<HTMLInputElement>(null);
   const [siteConfig, setSiteConfig] = useState<SiteEntryConfig>(() => loadCachedSiteEntryConfig());
   const [activeProfile, setActiveProfile] = useState<{ name: string; password: string } | null>(null);
   const vaultRef = useRef<VaultData>(vault);
@@ -224,7 +192,6 @@ export default function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setDrawerOpen(false);
-        setSadiyaModalOpen(false);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -547,66 +514,6 @@ export default function App() {
     setSiteConfig(saved);
   };
 
-  const handleInsideWallpaperPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setSavingInsideWallpaper(true);
-    try {
-      const compressed = await compressImageForVault(file, 1600, 680000);
-      await handleSaveSiteConfig({
-        ...siteConfig,
-        insideWallpaperDataUrl: compressed,
-        updatedAt: Date.now(),
-      });
-      showToast(
-        lang === 'bn'
-          ? 'ভিতরের ওয়েলপেপার পরিবর্তন ও সেভ হয়েছে।'
-          : 'Website wallpaper updated and saved.'
-      );
-      setSadiyaModalOpen(false);
-    } catch {
-      showToast(t.importErrorToast);
-    } finally {
-      setSavingInsideWallpaper(false);
-    }
-  };
-
-  const handleInsideOverlayStep = async (step: number) => {
-    setSavingInsideWallpaper(true);
-    try {
-      await handleSaveSiteConfig({
-        ...siteConfig,
-        insideOverlayOpacity: step,
-        updatedAt: Date.now(),
-      });
-    } catch {
-      showToast(t.importErrorToast);
-    } finally {
-      setSavingInsideWallpaper(false);
-    }
-  };
-
-  const handleResetInsideWallpaper = async () => {
-    setSavingInsideWallpaper(true);
-    try {
-      await handleSaveSiteConfig({
-        ...siteConfig,
-        insideWallpaperDataUrl: undefined,
-        updatedAt: Date.now(),
-      });
-      showToast(
-        lang === 'bn'
-          ? 'লক স্ক্রিনের ওয়েলপেপারে ফেরত নেওয়া হয়েছে।'
-          : 'Restored lock screen wallpaper.'
-      );
-    } catch {
-      showToast(t.importErrorToast);
-    } finally {
-      setSavingInsideWallpaper(false);
-    }
-  };
-
   if (!siteUnlocked) {
     return (
       <LockScreen
@@ -659,37 +566,13 @@ export default function App() {
     { key: 'site-settings', id: 'site-settings', label: t.menuSiteSettings, icon: SlidersHorizontal },
   ];
 
-  const insideWallpaperSrc =
-    siteConfig.insideWallpaperDataUrl || siteConfig.wallpaperDataUrl || DEFAULT_WALLPAPER_URL;
-  const insideOverlayClass = getInsideOverlayClass(siteConfig.insideOverlayOpacity);
-  const showInsideWallpaper = activeTab !== 'security' && activeTab !== 'verify';
-
   return (
-    <div
-      className={`min-h-screen flex relative transition-colors ${
-        showInsideWallpaper
-          ? 'bg-black text-white'
-          : 'bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100'
-      }`}
-    >
-      {/* Fullscreen Wallpaper inside unlocked website (hidden in PROFILE and KIRON Notes tabs) */}
-      {showInsideWallpaper && (
-        <div className="fixed inset-0 z-0 pointer-events-none select-none overflow-hidden">
-          <img
-            src={insideWallpaperSrc}
-            alt=""
-            aria-hidden="true"
-            className="w-full h-full object-cover object-center"
-          />
-          <div className={`absolute inset-0 ${insideOverlayClass}`} />
-        </div>
-      )}
-
+    <div className="min-h-screen flex relative bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       {/* Full-Height Left Vertical Drawer (triggered by Hamburger Menu ☰) */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
+            className="fixed inset-0 bg-black/50 backdrop-blur-[2px]"
             onClick={() => setDrawerOpen(false)}
             aria-hidden="true"
           />
@@ -698,17 +581,17 @@ export default function App() {
             role="dialog"
             aria-modal="true"
             aria-label="Navigation Menu"
-            className="relative z-10 w-72 max-w-[82vw] h-full flex flex-col border-r border-white/15 bg-slate-950/90 backdrop-blur-md text-white shadow-2xl"
+            className="relative z-10 w-72 max-w-[82vw] h-full flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl"
           >
             {/* Drawer Header */}
-            <div className="h-16 px-5 flex items-center justify-between border-b border-white/15 shrink-0">
+            <div className="h-16 px-5 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 shrink-0">
               <div className="flex items-center gap-3">
                 <img
                   src={APP_LOGO_URL}
                   alt="KIRON - XP"
                   className="w-8 h-8 rounded-lg object-cover shrink-0"
                 />
-                <span className="text-base font-bold tracking-tight whitespace-nowrap text-white">
+                <span className="text-base font-bold tracking-tight whitespace-nowrap text-slate-900 dark:text-white">
                   KIRON - XP
                 </span>
               </div>
@@ -716,7 +599,7 @@ export default function App() {
                 type="button"
                 onClick={() => setDrawerOpen(false)}
                 aria-label={t.close}
-                className="p-2 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -754,20 +637,20 @@ export default function App() {
                     }}
                     className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
                       active
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'text-white/85 hover:bg-white/10 hover:text-white'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
                     <span className="flex items-center gap-3">
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          active ? 'text-emerald-400' : 'text-white/65'
+                          active ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
                         }`}
                       />
                       <span>{item.label}</span>
                     </span>
                     {active && (
-                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     )}
                   </button>
                 );
@@ -775,10 +658,10 @@ export default function App() {
             </nav>
 
             {/* Drawer Footer: Status, Lock, Language & Theme Switches */}
-            <div className="p-4 border-t border-white/15 space-y-3 shrink-0">
-              <div className="text-xs text-white/70 flex items-center justify-between gap-2 px-1">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3 shrink-0">
+              <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between gap-2 px-1">
                 <span className="flex items-center gap-2 min-w-0">
-                  <Lock className={`w-3.5 h-3.5 shrink-0 ${isEncrypted ? 'text-emerald-400' : 'text-white/60'}`} />
+                  <Lock className={`w-3.5 h-3.5 shrink-0 ${isEncrypted ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
                   <span className="truncate font-medium">
                     {isEncrypted ? t.vaultEncryptedStatus : t.vaultUnencryptedStatus}
                   </span>
@@ -790,7 +673,7 @@ export default function App() {
                       setDrawerOpen(false);
                       handleLockNow();
                     }}
-                    className="text-xs font-medium text-emerald-400 hover:underline shrink-0"
+                    className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline shrink-0"
                   >
                     {t.lockVault}
                   </button>
@@ -801,7 +684,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={toggleLang}
-                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/15 text-xs font-medium text-white transition-colors whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap"
                 >
                   <Globe className="w-3.5 h-3.5" />
                   <span>{lang === 'bn' ? 'English' : 'বাংলা'}</span>
@@ -810,7 +693,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={toggleTheme}
-                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/15 text-xs font-medium text-white transition-colors whitespace-nowrap"
+                  className="inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap"
                 >
                   {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
                   <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
@@ -823,24 +706,14 @@ export default function App() {
 
       {/* Main Column */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        {/* Top Bar: Transparent over wallpaper tabs, crisp theme-aware bar on PROFILE & KIRON Notes */}
-        <header
-          className={`h-14 sm:h-16 px-4 sm:px-8 flex items-center gap-3 sticky top-0 z-30 transition-colors ${
-            showInsideWallpaper
-              ? 'border-b border-transparent bg-transparent'
-              : 'border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'
-          }`}
-        >
+        {/* Top Bar */}
+        <header className="h-14 sm:h-16 px-4 sm:px-8 flex items-center gap-3 sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm transition-colors">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-expanded={drawerOpen}
             aria-label="Menu"
-            className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border transition-colors shrink-0 ${
-              showInsideWallpaper
-                ? 'border-white/25 bg-black/25 backdrop-blur-xs hover:bg-black/45 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]'
-                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
-            }`}
+            className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors shrink-0"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -851,13 +724,7 @@ export default function App() {
               alt="KIRON - XP"
               className="w-8 h-8 rounded-xl object-cover object-center shrink-0 shadow-sm"
             />
-            <span
-              className={`text-base font-bold tracking-tight whitespace-nowrap ${
-                showInsideWallpaper
-                  ? 'text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]'
-                  : 'text-slate-900 dark:text-slate-100'
-              }`}
-            >
+            <span className="text-base font-bold tracking-tight whitespace-nowrap text-slate-900 dark:text-slate-100">
               KIRON - XP
             </span>
           </div>
@@ -878,13 +745,7 @@ export default function App() {
                     setActiveTab(item.id);
                   }}
                   className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                    showInsideWallpaper
-                      ? `drop-shadow-[0_1px_5px_rgba(0,0,0,0.95)] ${
-                          active
-                            ? 'bg-black/35 border border-white/30 text-emerald-300 backdrop-blur-xs'
-                            : 'text-white/85 hover:bg-black/25 hover:text-white'
-                        }`
-                      : active
+                    active
                       ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                   }`}
@@ -896,20 +757,9 @@ export default function App() {
             })}
           </nav>
 
-          {/* SADIYA name aligned straight to the right across from KIRON - XP — touch to change inside wallpaper */}
-          <button
-            type="button"
-            onClick={() => setSadiyaModalOpen(true)}
-            aria-label="SADIYA Wallpaper"
-            title={lang === 'bn' ? 'ওয়ালপেপার পরিবর্তন করুন' : 'Change Website Wallpaper'}
-            className={`ml-auto md:ml-0 inline-flex items-center px-2.5 py-1 rounded-lg bg-transparent text-sm font-bold tracking-wide transition-colors shrink-0 cursor-pointer ${
-              showInsideWallpaper
-                ? 'hover:bg-black/25 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]'
-                : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-100'
-            }`}
-          >
-            <span>SADIYA</span>
-          </button>
+          <span className="ml-auto md:ml-0 inline-flex items-center px-2.5 py-1 text-sm font-bold tracking-wide text-slate-900 dark:text-slate-100 shrink-0">
+            SADIYA
+          </span>
         </header>
 
         {/* Main Viewport */}
@@ -988,11 +838,7 @@ export default function App() {
 
       {/* Mobile Bottom Navigation */}
       <nav
-        className={`md:hidden fixed bottom-0 inset-x-0 z-30 h-14 grid grid-cols-4 transition-colors ${
-          showInsideWallpaper
-            ? 'bg-gradient-to-t from-black/55 via-black/25 to-transparent'
-            : 'border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'
-        }`}
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 h-14 grid grid-cols-4 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm transition-colors"
         aria-label="Mobile Navigation"
       >
         {navItems.map((item) => {
@@ -1010,11 +856,7 @@ export default function App() {
                 setActiveTab(item.id);
               }}
               className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors ${
-                showInsideWallpaper
-                  ? `drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)] ${
-                      active ? 'text-emerald-300' : 'text-white/85 hover:text-white'
-                    }`
-                  : active
+                active
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
@@ -1025,124 +867,6 @@ export default function App() {
           );
         })}
       </nav>
-
-      {/* SADIYA — Inside Website Wallpaper Modal */}
-      {sadiyaModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
-          onClick={() => setSadiyaModalOpen(false)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="w-full max-w-md rounded-2xl border border-white/20 bg-slate-950/90 backdrop-blur-md p-5 space-y-4 shadow-2xl text-white"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center shrink-0">
-                  <ImagePlus className="w-4 h-4" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-white">
-                    {lang === 'bn' ? 'SADIYA — ওয়েবসাইট ওয়ালপেপার' : 'SADIYA — Website Wallpaper'}
-                  </h2>
-                  <p className="text-[11px] text-white/70">
-                    {lang === 'bn'
-                      ? 'গ্যালারি থেকে ওয়েবসাইটের ভিতরের ওয়ালপেপার পরিবর্তন করুন।'
-                      : 'Choose a wallpaper photo from your gallery for inside the site.'}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSadiyaModalOpen(false)}
-                aria-label={t.close}
-                className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="w-24 h-36 rounded-xl overflow-hidden border border-white/20 bg-black shrink-0 shadow-sm">
-                <img
-                  src={insideWallpaperSrc}
-                  alt="Inside Wallpaper Preview"
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-
-              <div className="flex-1 space-y-2.5">
-                <input
-                  ref={sadiyaFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleInsideWallpaperPick}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  disabled={savingInsideWallpaper}
-                  onClick={() => sadiyaFileInputRef.current?.click()}
-                  className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white text-xs font-semibold transition-colors cursor-pointer"
-                >
-                  {savingInsideWallpaper ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="w-4 h-4" />
-                  )}
-                  <span>
-                    {lang === 'bn' ? 'গ্যালারি থেকে ওয়ালপেপার দিন' : 'Pick Wallpaper from Gallery'}
-                  </span>
-                </button>
-
-                {siteConfig.insideWallpaperDataUrl && (
-                  <button
-                    type="button"
-                    disabled={savingInsideWallpaper}
-                    onClick={handleResetInsideWallpaper}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-white/20 text-xs font-medium text-white/90 hover:bg-white/10 transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>
-                      {lang === 'bn' ? 'লক স্ক্রিনের ওয়ালপেপারে ফিরুন' : 'Match Lock Screen Wallpaper'}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-medium text-white/85 mb-1.5">
-                {lang === 'bn'
-                  ? `ওয়ালপেপার ডার্কনেস (${siteConfig.insideOverlayOpacity ?? 30}%)`
-                  : `Wallpaper Dimming (${siteConfig.insideOverlayOpacity ?? 30}%)`}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {[0, 10, 20, 30, 35, 45, 60, 75].map((step) => {
-                  const currentStep = siteConfig.insideOverlayOpacity ?? 30;
-                  return (
-                    <button
-                      key={step}
-                      type="button"
-                      disabled={savingInsideWallpaper}
-                      onClick={() => handleInsideOverlayStep(step)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                        currentStep === step
-                          ? 'bg-emerald-600 text-white'
-                          : 'border border-white/20 bg-white/5 text-white/80 hover:bg-white/15'
-                      }`}
-                    >
-                      {step}%
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Non-intrusive Toast Notification */}
       {toast && (

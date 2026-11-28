@@ -158,23 +158,23 @@ export function VaultView({
 
   return (
     <div className="space-y-4">
-      {/* Transparent Search Bar */}
+      {/* Search Bar */}
       {accounts.length > 0 && (
         <div className="relative w-full">
-          <Search className="w-5 h-5 text-white/75 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none drop-shadow-sm" />
+          <Search className="w-5 h-5 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t.searchPlaceholder}
-            className="w-full pl-11 pr-10 py-2.5 text-sm sm:text-base rounded-xl border border-white/25 bg-black/20 backdrop-blur-xs text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/60 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]"
+            className="w-full pl-11 pr-10 py-2.5 text-sm sm:text-base rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 shadow-xs"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch('')}
               aria-label={t.close}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-white/75 hover:text-white hover:bg-white/15 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -184,21 +184,21 @@ export function VaultView({
 
       {/* Empty State */}
       {accounts.length === 0 ? (
-        <div className="bg-black/25 backdrop-blur-xs border border-white/20 rounded-2xl p-10 text-center max-w-2xl mx-auto mt-6 text-white">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-400/35 text-emerald-300 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center max-w-2xl mx-auto mt-6 shadow-xs">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
             <ShieldCheck className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-semibold text-white drop-shadow-[0_1px_5px_rgba(0,0,0,0.95)]">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             {t.emptyVaultTitle}
           </h2>
-          <p className="mt-2 text-sm text-white/80 max-w-md mx-auto leading-relaxed drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
             {t.emptyVaultDesc}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
               type="button"
               onClick={onNavigateAdd}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0 shadow-lg"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0 shadow-xs"
             >
               <Plus className="w-4 h-4" />
               <span>{t.addAccountCta}</span>
@@ -206,11 +206,11 @@ export function VaultView({
           </div>
         </div>
       ) : filteredAccounts.length === 0 ? (
-        <div className="bg-black/20 backdrop-blur-xs border border-white/15 rounded-xl p-8 text-center text-sm text-white/80">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center text-sm text-slate-500 dark:text-slate-400 shadow-xs">
           {t.noSearchMatch}
         </div>
       ) : (
-        <div className="divide-y divide-white/15">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
           {filteredAccounts.map((acc) => {
             const state = otpMap[acc.id] ?? {
               code: acc.digits === 8 ? '--------' : '------',
@@ -220,12 +220,9 @@ export function VaultView({
             const isConfirmingDelete = confirmDeleteId === acc.id;
 
             return (
-              <div
-                key={acc.id}
-                className="bg-transparent py-3.5 px-1 sm:px-2 space-y-2.5"
-              >
+              <div key={acc.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
                 <div className="flex items-center justify-between gap-3 sm:gap-5">
-                  {/* Left Side: Unboxed Avatar+Timer & Clean Text over wallpaper */}
+                  {/* Left Side: Avatar+Timer & Account Info */}
                   <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
                     <div className="flex flex-col items-center gap-1.5 shrink-0">
                       <AccountAvatar issuer={acc.issuer} avatarDataUrl={acc.avatarDataUrl} size="lg" />
@@ -240,7 +237,7 @@ export function VaultView({
                           type="button"
                           onClick={() => onIncrementHotp(acc.id)}
                           title={t.nextCodeHotp}
-                          className="w-14 inline-flex items-center justify-center gap-1 px-1.5 py-1 rounded-lg bg-black/25 border border-white/25 hover:bg-black/45 text-[11px] font-medium text-white transition-colors whitespace-nowrap shrink-0"
+                          className="w-14 inline-flex items-center justify-center gap-1 px-1.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-[11px] font-medium text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shrink-0"
                         >
                           <RefreshCw className="w-3 h-3" />
                           <span>+1</span>
@@ -248,10 +245,9 @@ export function VaultView({
                       )}
                     </div>
 
-                    {/* Beside Image: Clean Drop-Shadowed Text over Wallpaper */}
-                    <div className="min-w-0 flex-1 space-y-0.5 drop-shadow-[0_1px_6px_rgba(0,0,0,0.98)]">
+                    <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex items-center gap-2 min-w-0">
-                        <h3 className="text-sm sm:text-base font-bold text-white truncate">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
                           MD KIRON MONDAL
                         </h3>
 
@@ -265,8 +261,8 @@ export function VaultView({
                             aria-label={t.editAccount}
                             className={`inline-flex items-center justify-center p-0.5 rounded transition-colors ${
                               openMenuId === acc.id
-                                ? 'text-emerald-300'
-                                : 'text-white/75 hover:text-white'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
                             }`}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -275,7 +271,7 @@ export function VaultView({
                           {openMenuId === acc.id && (
                             <div
                               role="menu"
-                              className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-44 rounded-xl border border-white/20 bg-slate-950/95 backdrop-blur-md shadow-2xl py-1.5 z-40"
+                              className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl py-1.5 z-40"
                             >
                               <button
                                 type="button"
@@ -284,9 +280,9 @@ export function VaultView({
                                   setOpenMenuId(null);
                                   onEditAccount(acc);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-white/90 hover:bg-white/10 text-left transition-colors whitespace-nowrap"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
                               >
-                                <Edit3 className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                                <Edit3 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                 <span>{t.editAccount}</span>
                               </button>
 
@@ -297,13 +293,13 @@ export function VaultView({
                                   setOpenMenuId(null);
                                   setQrAccount(acc);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-white/90 hover:bg-white/10 text-left transition-colors whitespace-nowrap"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
                               >
-                                <QrCode className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                                <QrCode className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                 <span>{t.showQr}</span>
                               </button>
 
-                              <div className="my-1 border-t border-white/15" />
+                              <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
 
                               <button
                                 type="button"
@@ -312,7 +308,7 @@ export function VaultView({
                                   setOpenMenuId(null);
                                   setConfirmDeleteId(isConfirmingDelete ? null : acc.id);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-400 hover:bg-red-500/15 text-left transition-colors whitespace-nowrap"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left transition-colors whitespace-nowrap"
                               >
                                 <Trash2 className="w-3.5 h-3.5 shrink-0" />
                                 <span>{t.deleteAccount}</span>
@@ -322,18 +318,18 @@ export function VaultView({
                         </div>
                       </div>
 
-                      <p className="text-xs sm:text-sm font-semibold text-white/95 truncate">
+                      <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
                         {acc.issuer}
                       </p>
 
                       {acc.accountName && acc.accountName.trim().toLowerCase() !== 'user' && (
-                        <p className="text-xs text-white/85 truncate">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {acc.accountName}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-0.5 text-[11px] sm:text-xs text-white/80 tabular-nums">
-                        <span className="font-semibold text-white/90">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 pt-0.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
                           {acc.type.toUpperCase()}
                           {acc.category ? ` - ${acc.category}` : ''}
                         </span>
@@ -355,18 +351,20 @@ export function VaultView({
                       </div>
 
                       {acc.caption && (
-                        <p className="text-[11px] sm:text-xs text-white/80 truncate pt-0.5">
+                        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate pt-0.5">
                           {acc.caption}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Right Side: Pure Unboxed OTP Code & Clean Copy Button over Wallpaper */}
+                  {/* Right Side: OTP Code & Copy Button */}
                   {(() => {
                     const [partA, partB] = splitOtpGroups(state.code);
                     const isExpiring = acc.type === 'totp' && state.remainingSeconds <= 5;
-                    const digitTextClass = isExpiring ? 'text-amber-300' : 'text-emerald-300';
+                    const digitTextClass = isExpiring
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-emerald-600 dark:text-emerald-400';
 
                     return (
                       <div className="self-center flex flex-col items-end gap-1.5 shrink-0">
@@ -374,12 +372,12 @@ export function VaultView({
                           type="button"
                           onClick={() => handleCopyCode(acc.id, state.code)}
                           title={t.copyCode}
-                          className={`flex items-center justify-center gap-1 px-1 py-0.5 bg-transparent border-0 font-mono text-xl sm:text-2xl font-extrabold tracking-[0.12em] tabular-nums leading-none cursor-pointer select-all transition-colors drop-shadow-[0_2px_8px_rgba(0,0,0,0.98)] ${digitTextClass}`}
+                          className={`flex items-center justify-center gap-1 px-1 py-0.5 bg-transparent border-0 font-mono text-xl sm:text-2xl font-extrabold tracking-[0.12em] tabular-nums leading-none cursor-pointer select-all transition-colors ${digitTextClass}`}
                         >
                           <span>{partA}</span>
                           {partB && (
                             <>
-                              <span className="text-white/50 font-normal tracking-normal">·</span>
+                              <span className="text-slate-300 dark:text-slate-600 font-normal tracking-normal">·</span>
                               <span>{partB}</span>
                             </>
                           )}
@@ -389,10 +387,10 @@ export function VaultView({
                           type="button"
                           onClick={() => handleCopyCode(acc.id, state.code)}
                           title={t.copyCode}
-                          className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] ${
+                          className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
                             isCopied
-                              ? 'border-emerald-400 bg-emerald-600/85 text-white'
-                              : 'border-white/30 bg-black/20 hover:bg-emerald-600/80 hover:border-emerald-400 text-white'
+                              ? 'border-emerald-500 bg-emerald-600 text-white'
+                              : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white text-slate-700 dark:text-slate-200'
                           }`}
                         >
                           {isCopied ? (
@@ -414,8 +412,8 @@ export function VaultView({
 
                 {/* Inline Delete Confirmation */}
                 {isConfirmingDelete && (
-                  <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-red-950/75 backdrop-blur-xs border border-red-400/50 text-xs">
-                    <span className="text-red-100">{t.deleteConfirmMsg}</span>
+                  <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs">
+                    <span className="text-red-700 dark:text-red-200 font-medium">{t.deleteConfirmMsg}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
@@ -430,7 +428,7 @@ export function VaultView({
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteId(null)}
-                        className="px-2.5 py-1 rounded border border-white/25 text-white hover:bg-white/10 transition-colors"
+                        className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       >
                         {t.cancel}
                       </button>
@@ -446,19 +444,19 @@ export function VaultView({
       {/* Account QR Inspection Modal */}
       {qrAccount && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-[2px]"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-[2px]"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-md bg-slate-950/90 backdrop-blur-md border border-white/20 rounded-2xl p-6 space-y-5 text-white shadow-2xl">
+          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5 text-slate-900 dark:text-white shadow-2xl">
             <div className="flex items-center justify-between gap-4">
-              <h3 className="text-base font-semibold text-white">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                 {t.qrModalTitle}
               </h3>
               <button
                 type="button"
                 onClick={() => setQrAccount(null)}
-                className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                 aria-label={t.close}
               >
                 <X className="w-4 h-4" />
@@ -468,19 +466,19 @@ export function VaultView({
             <div className="flex flex-col items-center text-center space-y-3">
               <QrCodeCanvas value={buildOtpAuthUri(qrAccount)} size={200} />
               <div>
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
                   {qrAccount.issuer}
                 </p>
                 {qrAccount.accountName &&
                   qrAccount.accountName.trim().toLowerCase() !== 'user' && (
-                    <p className="text-xs text-white/70">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       {qrAccount.accountName}
                     </p>
                   )}
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-black/40 border border-white/15 font-mono text-[11px] text-white/75 break-all max-h-24 overflow-y-auto">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-[11px] text-slate-600 dark:text-slate-300 break-all max-h-24 overflow-y-auto">
               {buildOtpAuthUri(qrAccount)}
             </div>
 
@@ -488,7 +486,7 @@ export function VaultView({
               <button
                 type="button"
                 onClick={() => handleCopyUri(qrAccount)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
               >
                 {copiedUri ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedUri ? t.copied : t.copyUri}</span>
@@ -496,7 +494,7 @@ export function VaultView({
               <button
                 type="button"
                 onClick={() => setQrAccount(null)}
-                className="px-4 py-2 rounded-lg border border-white/20 text-xs font-medium text-white/90 hover:bg-white/10 transition-colors"
+                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 {t.close}
               </button>

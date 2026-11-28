@@ -180,43 +180,43 @@ export function EmailVaultView({
 
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
-      {/* Transparent Search Bar */}
+      {/* Search Bar */}
       <div className="relative w-full">
-        <Search className="w-4 h-4 text-white/75 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t.emailSearchPlaceholder}
-          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-white/25 bg-black/20 backdrop-blur-xs text-sm text-white placeholder:text-white/70 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/60 drop-shadow-[0_1px_4px_rgba(0,0,0,0.85)]"
+          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 shadow-xs"
         />
         {query && (
           <button
             type="button"
             onClick={() => setQuery('')}
             aria-label={t.close}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded text-white/75 hover:text-white"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Add / Edit Email Composer Card (Dark Frosted Glass) */}
+      {/* Add / Edit Email Composer Card */}
       {composerOpen && (
         <form
           onSubmit={handleSubmit}
-          className="rounded-xl border border-white/20 bg-black/45 backdrop-blur-md p-5 space-y-4 text-white shadow-xl"
+          className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4 text-slate-900 dark:text-white shadow-xs"
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Mail className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Mail className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{editingId ? t.emailEditTitle : t.emailAddTitle}</span>
             </h2>
             <button
               type="button"
               onClick={resetForm}
-              className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               aria-label={t.close}
             >
               <X className="w-4 h-4" />
@@ -225,7 +225,7 @@ export function EmailVaultView({
 
           <div className="grid sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-medium text-white/80 mb-1.5">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 {t.emailAddressLabel} *
               </label>
               <input
@@ -237,12 +237,12 @@ export function EmailVaultView({
                 }}
                 placeholder={t.emailAddressPlaceholder}
                 autoFocus
-                className="w-full px-3 py-2.5 rounded-lg border border-white/25 bg-black/30 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
+                className="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-white/80 mb-1.5">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 {t.emailPasswordField}
               </label>
               <div className="relative">
@@ -251,12 +251,12 @@ export function EmailVaultView({
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   placeholder={t.emailPasswordPlaceholder}
-                  className="w-full pl-3 pr-10 py-2.5 rounded-lg border border-white/25 bg-black/30 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
+                  className="w-full pl-3 pr-10 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
                 />
                 <button
                   type="button"
                   onClick={() => setShowFormPassword((v) => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-white/65 hover:text-white"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                 >
                   {showFormPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -265,7 +265,7 @@ export function EmailVaultView({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/80 mb-1.5">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               {t.emailNoteField}
             </label>
             <input
@@ -273,12 +273,12 @@ export function EmailVaultView({
               value={captionInput}
               onChange={(e) => setCaptionInput(e.target.value)}
               placeholder={t.emailNotePlaceholder}
-              className="w-full px-3 py-2.5 rounded-lg border border-white/25 bg-black/30 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 focus:border-emerald-400"
+              className="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-white/80 mb-2">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
               {t.galleryIconLabel}
             </label>
             <div className="flex items-center gap-4">
@@ -288,7 +288,7 @@ export function EmailVaultView({
                 size="lg"
               />
               <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-white/25 bg-black/30 hover:bg-black/45 text-xs font-medium text-white cursor-pointer transition-colors">
+                <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors">
                   <ImagePlus className="w-4 h-4" />
                   <span>{t.uploadIconBtn}</span>
                   <input
@@ -302,7 +302,7 @@ export function EmailVaultView({
                   <button
                     type="button"
                     onClick={() => setAvatarDataUrl(undefined)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-red-300 hover:bg-red-500/20 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>{t.removeIconBtn}</span>
@@ -313,7 +313,7 @@ export function EmailVaultView({
           </div>
 
           {formError && (
-            <p className="text-xs font-medium text-rose-300">
+            <p className="text-xs font-medium text-rose-600 dark:text-rose-400">
               {formError}
             </p>
           )}
@@ -322,13 +322,13 @@ export function EmailVaultView({
             <button
               type="button"
               onClick={resetForm}
-              className="px-3.5 py-2 rounded-lg border border-white/25 text-xs font-medium text-white/85 hover:bg-white/10"
+              className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               {t.cancel}
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors"
+              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
             >
               {t.emailSaveBtn}
             </button>
@@ -336,25 +336,25 @@ export function EmailVaultView({
         </form>
       )}
 
-      {/* Email Rows (No White Boxes — Floating cleanly over wallpaper) */}
+      {/* Email Rows */}
       {emails.length === 0 && !composerOpen ? (
-        <div className="rounded-xl border border-dashed border-white/25 bg-black/25 backdrop-blur-xs p-10 text-center space-y-3 text-white">
-          <div className="w-11 h-11 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center mx-auto">
+        <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-10 text-center space-y-3 shadow-xs">
+          <div className="w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
             <Mail className="w-5 h-5" />
           </div>
-          <h3 className="text-base font-semibold text-white">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">
             {t.emailEmptyTitle}
           </h3>
-          <p className="text-xs text-white/75 max-w-md mx-auto">
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
             {t.emailEmptyDesc}
           </p>
         </div>
       ) : filteredEmails.length === 0 ? (
-        <div className="rounded-xl border border-white/15 bg-black/20 backdrop-blur-xs p-8 text-center text-sm text-white/80">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 text-center text-sm text-slate-500 dark:text-slate-400 shadow-xs">
           {t.emailNoMatch}
         </div>
       ) : (
-        <div className="divide-y divide-white/15">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs">
           {filteredEmails.map((entry) => {
             const isRevealed = Boolean(revealedIds[entry.id]);
             const caption = entry.note ?? entry.label;
@@ -365,10 +365,7 @@ export function EmailVaultView({
             const rightValueToCopy = entry.password || entry.email;
 
             return (
-              <div
-                key={entry.id}
-                className="bg-transparent py-3.5 px-1 sm:px-2 space-y-2.5"
-              >
+              <div key={entry.id} className="px-3.5 sm:px-4 py-3.5 space-y-2.5">
                 <div className="flex items-center justify-between gap-3 sm:gap-5">
                   <div className="min-w-0 flex-1 flex items-center gap-3 sm:gap-4">
                     <div className="flex flex-col items-center gap-1.5 shrink-0">
@@ -381,10 +378,10 @@ export function EmailVaultView({
                         type="button"
                         onClick={() => handleCopy(entry.email, emailCopyKey)}
                         title={entry.email}
-                        className={`min-w-[56px] inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-semibold transition-colors whitespace-nowrap shrink-0 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] ${
+                        className={`min-w-[56px] inline-flex items-center justify-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-semibold transition-colors whitespace-nowrap shrink-0 ${
                           isEmailCopied
-                            ? 'border-emerald-400 bg-emerald-600/85 text-white'
-                            : 'border-white/25 bg-black/20 hover:bg-black/40 text-white'
+                            ? 'border-emerald-500 bg-emerald-600 text-white'
+                            : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
                         }`}
                       >
                         {isEmailCopied ? (
@@ -401,9 +398,9 @@ export function EmailVaultView({
                       </button>
                     </div>
 
-                    <div className="min-w-0 flex-1 space-y-1 drop-shadow-[0_1px_6px_rgba(0,0,0,0.98)]">
+                    <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <h3 className="text-sm sm:text-base font-bold text-white truncate">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
                           MD KIRON MONDAL
                         </h3>
 
@@ -419,8 +416,8 @@ export function EmailVaultView({
                             aria-label={t.editAccount}
                             className={`inline-flex items-center justify-center p-0.5 rounded transition-colors ${
                               openMenuId === entry.id
-                                ? 'text-emerald-300'
-                                : 'text-white/75 hover:text-white'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-slate-400 hover:text-slate-700 dark:hover:text-white'
                             }`}
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -429,7 +426,7 @@ export function EmailVaultView({
                           {openMenuId === entry.id && (
                             <div
                               role="menu"
-                              className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-white/20 bg-slate-950/95 backdrop-blur-md shadow-2xl py-1.5 z-40"
+                              className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-40 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl py-1.5 z-40"
                             >
                               <button
                                 type="button"
@@ -438,13 +435,13 @@ export function EmailVaultView({
                                   setOpenMenuId(null);
                                   openEditComposer(entry);
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-white/90 hover:bg-white/10 text-left transition-colors whitespace-nowrap"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
                               >
-                                <Edit3 className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                                <Edit3 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                 <span>{t.editAccount}</span>
                               </button>
 
-                              <div className="my-1 border-t border-white/15" />
+                              <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
 
                               <button
                                 type="button"
@@ -455,7 +452,7 @@ export function EmailVaultView({
                                     prev === entry.id ? null : entry.id
                                   );
                                 }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-400 hover:bg-red-500/15 text-left transition-colors whitespace-nowrap"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left transition-colors whitespace-nowrap"
                               >
                                 <Trash2 className="w-3.5 h-3.5 shrink-0" />
                                 <span>{t.deleteAccount}</span>
@@ -465,19 +462,19 @@ export function EmailVaultView({
                         </div>
                       </div>
 
-                      <p className="text-xs sm:text-sm font-semibold text-white/95 break-all">
+                      <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 break-all">
                         {entry.email}
                       </p>
 
                       {caption && (
-                        <p className="text-xs text-white/80 break-words">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 break-words">
                           {caption}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Right Side: Unboxed SADIYA / Password + subtle Copy button */}
+                  {/* Right Side: SADIYA / Password + Copy button */}
                   <div className="self-center flex flex-col items-end gap-1.5 shrink-0 max-w-[175px]">
                     <button
                       type="button"
@@ -485,16 +482,16 @@ export function EmailVaultView({
                         if (entry.password) toggleReveal(entry.id);
                       }}
                       title={entry.password ? 'Show / Hide password' : 'SADIYA'}
-                      className="inline-flex items-center justify-end gap-1.5 px-1 py-0.5 bg-transparent border-0 text-sm font-extrabold tracking-wider text-emerald-300 transition-colors hover:text-emerald-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.98)] max-w-full"
+                      className="inline-flex items-center justify-end gap-1.5 px-1 py-0.5 bg-transparent border-0 text-sm font-extrabold tracking-wider text-emerald-600 dark:text-emerald-400 transition-colors hover:text-emerald-700 dark:hover:text-emerald-300 max-w-full"
                     >
                       <span className="truncate font-mono">
                         {isRevealed && entry.password ? entry.password : 'SADIYA'}
                       </span>
                       {entry.password && (
                         isRevealed ? (
-                          <EyeOff className="w-3.5 h-3.5 shrink-0 text-white/75" />
+                          <EyeOff className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
                         ) : (
-                          <Eye className="w-3.5 h-3.5 shrink-0 text-white/75" />
+                          <Eye className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
                         )
                       )}
                     </button>
@@ -502,10 +499,10 @@ export function EmailVaultView({
                     <button
                       type="button"
                       onClick={() => handleCopy(rightValueToCopy, copyKey)}
-                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)] ${
+                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg border text-[11px] font-semibold tracking-wide transition-all duration-150 active:scale-[0.97] whitespace-nowrap ${
                         isCopied
-                          ? 'border-emerald-400 bg-emerald-600/85 text-white'
-                          : 'border-white/30 bg-black/20 hover:bg-emerald-600/80 hover:border-emerald-400 text-white'
+                          ? 'border-emerald-500 bg-emerald-600 text-white'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white text-slate-700 dark:text-slate-200'
                       }`}
                     >
                       {isCopied ? (
@@ -525,15 +522,15 @@ export function EmailVaultView({
 
                 {/* Inline Delete Confirm */}
                 {deleteConfirmId === entry.id && (
-                  <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-red-950/75 backdrop-blur-xs border border-red-400/50 text-xs">
-                    <span className="text-red-100 font-medium">
+                  <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs">
+                    <span className="text-red-700 dark:text-red-200 font-medium">
                       {t.emailDeleteConfirm}
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
                         onClick={() => setDeleteConfirmId(null)}
-                        className="px-2.5 py-1 rounded border border-white/25 text-white hover:bg-white/10 transition-colors"
+                        className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       >
                         {t.cancel}
                       </button>
