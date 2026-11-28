@@ -1748,17 +1748,6 @@ export function SecurityBackupView({
                         {post.note}
                       </p>
                     )}
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
-                      <span>{formatMediaDate(post.createdAt)}</span>
-                      {count > 1 && (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <span>
-                            {count} {t.secondsShort === 'সে.' ? 'টি ছবি' : 'photos'}
-                          </span>
-                        </>
-                      )}
-                    </div>
                   </div>
 
                   {/* Facebook-Style Multi-Photo Collage Layout */}
