@@ -28,7 +28,7 @@ import {
   sanitizeDocId,
 } from '../lib/firestoreVault';
 import { Translations } from '../lib/i18n';
-import { compressImageForVault, fileToBase64DataUrl } from '../lib/storage';
+import { compressImageForVault, fileToBase64DataUrl, optimize4kImageForVault } from '../lib/storage';
 import { ProfileMediaEntry, ProfileMediaKind } from '../types';
 
 interface SecurityBackupViewProps {
@@ -142,9 +142,18 @@ export function SecurityBackupView({
 
   const [copiedMediaId, setCopiedMediaId] = useState<string | null>(null);
   const [openApkMenuId, setOpenApkMenuId] = useState<string | null>(null);
+  const [openPhotoMenuId, setOpenPhotoMenuId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [lightboxItem, setLightboxItem] = useState<ProfileMediaEntry | null>(null);
   const [lightboxGroup, setLightboxGroup] = useState<ProfileMediaEntry[]>([]);
+  const [editingPhotoPost, setEditingPhotoPost] = useState<{
+    groupKey: string;
+    items: ProfileMediaEntry[];
+    title: string;
+    caption: string;
+  } | null>(null);
+  const [savingPhotoEdit, setSavingPhotoEdit] = useState(false);
+  const [editPhotoError, setEditPhotoError] = useState('');
   const [editingApk, setEditingApk] = useState<{
     item: ProfileMediaEntry;
     title: string;
@@ -164,10 +173,14 @@ export function SecurityBackupView({
       if (!target?.closest('[data-apk-menu]')) {
         setOpenApkMenuId(null);
       }
+      if (!target?.closest('[data-photo-menu]')) {
+        setOpenPhotoMenuId(null);
+      }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setOpenApkMenuId(null);
+        setOpenPhotoMenuId(null);
       }
     };
     document.addEventListener('mousedown', handlePointerDown);
@@ -488,10 +501,10 @@ export function SecurityBackupView({
 
       const uploadSingleFile = async (file: File, i: number) => {
         let rawDataUrl: string;
-        if ((kind === 'photo' || kind === 'screenshot') && file.size > 460000) {
+        if (kind === 'photo' || kind === 'screenshot') {
           try {
-            // Fast HD optimization (~2048px WebP) so photos save in a single instant Firestore write
-            rawDataUrl = await compressImageForVault(file, 2048, 680000);
+            // Preserve true 4K / HD resolution (up to 4096px) with hardware-accelerated fast encoding
+            rawDataUrl = await optimize4kImageForVault(file, 4096, 680000);
           } catch {
             rawDataUrl = await fileToBase64DataUrl(file);
           }
@@ -516,23 +529,32 @@ export function SecurityBackupView({
             ? customTitle.slice(0, 160)
             : (customTitle || fallbackTitle).slice(0, 160);
 
-        const cleanApkNameRaw = file.name.trim();
-        const resolvedFileName =
-          kind === 'apk'
-            ? cleanApkNameRaw
-              ? cleanApkNameRaw.slice(0, 200)
-              : `${(
-                  (cleanRawName || selectedCategory || 'base')
-                    .replace(/[^a-zA-Z0-9._ -]+/g, '')
-                    .trim()
-                    .replace(/\s+/g, '_') || 'base'
-                ).slice(0, 195)}.apk`
-            : file.name.slice(0, 200);
-
+        const dataMimeMatch = rawDataUrl.match(/^data:([^;]+);/i);
         const resolvedMimeType =
           kind === 'apk'
             ? 'application/vnd.android.package-archive'
-            : file.type || (kind === 'video' ? 'video/mp4' : 'image/jpeg');
+            : dataMimeMatch?.[1] || file.type || (kind === 'video' ? 'video/mp4' : 'image/jpeg');
+
+        const cleanApkNameRaw = file.name.trim();
+        let resolvedFileName: string;
+        if (kind === 'apk') {
+          resolvedFileName = cleanApkNameRaw
+            ? cleanApkNameRaw.slice(0, 200)
+            : `${(
+                (cleanRawName || selectedCategory || 'base')
+                  .replace(/[^a-zA-Z0-9._ -]+/g, '')
+                  .trim()
+                  .replace(/\s+/g, '_') || 'base'
+              ).slice(0, 195)}.apk`;
+        } else if (
+          (kind === 'photo' || kind === 'screenshot') &&
+          resolvedMimeType === 'image/webp'
+        ) {
+          const stem = file.name.replace(/\.[^.]+$/, '') || `${kind}-${now}`;
+          resolvedFileName = `${stem}.webp`.slice(0, 200);
+        } else {
+          resolvedFileName = file.name.slice(0, 200);
+        }
 
         const entry: ProfileMediaEntry = {
           id,
@@ -550,7 +572,7 @@ export function SecurityBackupView({
           updatedAt: now,
         };
 
-        // Cache local object URL so large files download/play instantly without re-fetching chunks
+        // Cache local object URL so large files download/view instantly without re-fetching chunks
         if (rawDataUrl.length > 680000) {
           const objUrl = URL.createObjectURL(file);
           cacheProfileMediaObjectUrl(id, objUrl);
@@ -566,9 +588,9 @@ export function SecurityBackupView({
         updateAggregateProgress();
       };
 
-      // Upload up to 3 files concurrently for rapid multi-file adds
-      for (let start = 0; start < files.length; start += 3) {
-        const batch = files.slice(start, start + 3);
+      // Upload up to 6 files concurrently for ultra-fast multi-photo posting
+      for (let start = 0; start < files.length; start += 6) {
+        const batch = files.slice(start, start + 6);
         await Promise.all(batch.map((file, offset) => uploadSingleFile(file, start + offset)));
       }
 
@@ -675,10 +697,19 @@ export function SecurityBackupView({
         cleanTitle ||
         (item.category ? item.category.replace(/\s+/g, '_') : '') ||
         `${item.kind}-${item.id}`;
-      a.download =
-        item.kind === 'apk' && !baseName.toLowerCase().endsWith('.apk')
+      const isWebpData =
+        href.startsWith('data:image/webp') || item.mimeType === 'image/webp';
+      if (item.kind === 'apk') {
+        a.download = !baseName.toLowerCase().endsWith('.apk')
           ? `${baseName}.apk`
           : baseName;
+      } else if ((item.kind === 'photo' || item.kind === 'screenshot') && isWebpData) {
+        a.download = /\.[a-z0-9]+$/i.test(baseName)
+          ? baseName.replace(/\.[^.]+$/, '.webp')
+          : `${baseName}.webp`;
+      } else {
+        a.download = baseName;
+      }
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -686,6 +717,64 @@ export function SecurityBackupView({
       setUploadError(t.importErrorToast);
     } finally {
       setDownloadingIds((prev) => ({ ...prev, [item.id]: false }));
+    }
+  };
+
+  const handleDownloadPhotoPost = async (items: ProfileMediaEntry[]) => {
+    if (items.length === 0) return;
+    if (items.length === 1) {
+      await handleDownloadMedia(items[0]);
+      return;
+    }
+    for (let idx = 0; idx < items.length; idx += 1) {
+      await handleDownloadMedia(items[idx]);
+      if (idx < items.length - 1) {
+        await new Promise((r) => window.setTimeout(r, 140));
+      }
+    }
+  };
+
+  const openEditPhotoPostModal = (post: {
+    groupKey: string;
+    items: ProfileMediaEntry[];
+    title: string;
+    note: string;
+  }) => {
+    setEditPhotoError('');
+    setEditingPhotoPost({
+      groupKey: post.groupKey,
+      items: post.items,
+      title: post.title,
+      caption: post.note,
+    });
+  };
+
+  const handleSavePhotoPostEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPhotoPost || !onUpdateProfileMedia) return;
+    const cleanTitle = editingPhotoPost.title.trim().slice(0, 160);
+    const cleanCaption = editingPhotoPost.caption.trim().slice(0, 500) || undefined;
+
+    setSavingPhotoEdit(true);
+    setEditPhotoError('');
+    try {
+      await Promise.all(
+        editingPhotoPost.items.map((item) =>
+          onUpdateProfileMedia(
+            {
+              ...item,
+              title: cleanTitle,
+              note: cleanCaption,
+            },
+            { newFilePicked: false }
+          )
+        )
+      );
+      setEditingPhotoPost(null);
+    } catch {
+      setEditPhotoError(t.importErrorToast);
+    } finally {
+      setSavingPhotoEdit(false);
     }
   };
 
@@ -1509,6 +1598,9 @@ export function SecurityBackupView({
           <div className="max-w-2xl mx-auto space-y-4">
             {photoPosts.map((post) => {
               const isConfirming = confirmDeleteId === post.groupKey;
+              const isPostDownloading = post.items.some((entry) =>
+                Boolean(downloadingIds[entry.id])
+              );
               const count = post.items.length;
               const getSrc = (entry: ProfileMediaEntry) =>
                 entry.dataUrl || mediaUrls[entry.id] || getCachedProfileMediaObjectUrl(entry.id);
@@ -1557,121 +1649,178 @@ export function SecurityBackupView({
               return (
                 <article
                   key={post.groupKey}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs"
                 >
-                  {/* Post Top Header (Title / Caption + Actions, matching Facebook post layout) */}
-                  <div className="px-4 py-3 flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1 space-y-1">
-                      {post.title && (
-                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white break-words">
-                          {post.title}
-                        </h3>
-                      )}
-                      {post.note && (
-                        <p className="text-sm sm:text-base text-slate-900 dark:text-slate-100 break-words leading-snug whitespace-pre-wrap">
-                          {post.note}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
-                        <span>{formatMediaDate(post.createdAt)}</span>
-                        {count > 1 && (
-                          <>
-                            <span aria-hidden="true">·</span>
-                            <span>
-                              {count} {t.secondsShort === 'সে.' ? 'টি ছবি' : 'photos'}
-                            </span>
-                          </>
+                  {/* Auto Header: MD KIRON MONDAL + Pencil Menu (Edit / Download / Delete), Title above Caption */}
+                  <div className="px-4 py-3 space-y-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                        MD KIRON MONDAL
+                      </h3>
+
+                      <div className="relative shrink-0" data-photo-menu>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenPhotoMenuId((prev) =>
+                              prev === post.groupKey ? null : post.groupKey
+                            )
+                          }
+                          aria-expanded={openPhotoMenuId === post.groupKey}
+                          aria-haspopup="menu"
+                          title={t.editAccount}
+                          aria-label={t.editAccount}
+                          className={`inline-flex items-center justify-center p-0.5 rounded transition-colors ${
+                            openPhotoMenuId === post.groupKey
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
+                          }`}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {openPhotoMenuId === post.groupKey && (
+                          <div
+                            role="menu"
+                            className="absolute left-1/2 -translate-x-1/2 mt-1.5 w-44 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-xl py-1.5 z-40"
+                          >
+                            {onUpdateProfileMedia && (
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setOpenPhotoMenuId(null);
+                                  openEditPhotoPostModal(post);
+                                }}
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-left transition-colors whitespace-nowrap"
+                              >
+                                <Edit3 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span>{t.editAccount}</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              role="menuitem"
+                              disabled={isPostDownloading}
+                              onClick={() => {
+                                setOpenPhotoMenuId(null);
+                                void handleDownloadPhotoPost(post.items);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 disabled:opacity-60 text-left transition-colors whitespace-nowrap"
+                            >
+                              {isPostDownloading ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5 shrink-0" />
+                              )}
+                              <span>
+                                {isPostDownloading ? t.mediaDownloadingApk : t.mediaDownloadBtn}
+                              </span>
+                            </button>
+
+                            <div className="my-1 border-t border-slate-200 dark:border-slate-700" />
+
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setOpenPhotoMenuId(null);
+                                setConfirmDeleteId(isConfirming ? null : post.groupKey);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-left transition-colors whitespace-nowrap"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                              <span>{t.deleteAccount}</span>
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
-                      {count === 1 && (
-                        <button
-                          type="button"
-                          disabled={Boolean(downloadingIds[post.items[0].id])}
-                          onClick={() => handleDownloadMedia(post.items[0])}
-                          title={t.mediaDownloadBtn}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        >
-                          {downloadingIds[post.items[0].id] ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Download className="w-4 h-4" />
-                          )}
-                        </button>
+                    {post.title && (
+                      <p className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300 break-words">
+                        {post.title}
+                      </p>
+                    )}
+                    {post.note && (
+                      <p className="text-sm text-slate-800 dark:text-slate-100 break-words leading-snug whitespace-pre-wrap">
+                        {post.note}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 tabular-nums">
+                      <span>{formatMediaDate(post.createdAt)}</span>
+                      {count > 1 && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span>
+                            {count} {t.secondsShort === 'সে.' ? 'টি ছবি' : 'photos'}
+                          </span>
+                        </>
                       )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setConfirmDeleteId(isConfirming ? null : post.groupKey)
-                        }
-                        title={t.deleteAccount}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
 
                   {/* Facebook-Style Multi-Photo Collage Layout */}
-                  {count === 1 ? (
-                    <div
-                      onClick={() => openPhotoLightbox(post.items[0])}
-                      className="relative min-h-[180px] bg-slate-950 cursor-pointer group overflow-hidden flex items-center justify-center"
-                    >
-                      {getSrc(post.items[0]) ? (
-                        <img
-                          src={getSrc(post.items[0])}
-                          alt={post.title || post.items[0].kind}
-                          loading="lazy"
-                          className="w-full h-auto max-h-[580px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.01]"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center w-full h-56 text-slate-400">
-                          <Loader2
-                            className={`w-5 h-5 ${loadingMediaIds[post.items[0].id] ? 'animate-spin' : ''}`}
+                  <div className={isConfirming ? 'overflow-hidden' : 'rounded-b-xl overflow-hidden'}>
+                    {count === 1 ? (
+                      <div
+                        onClick={() => openPhotoLightbox(post.items[0])}
+                        className="relative min-h-[180px] bg-slate-950 cursor-pointer group overflow-hidden flex items-center justify-center"
+                      >
+                        {getSrc(post.items[0]) ? (
+                          <img
+                            src={getSrc(post.items[0])}
+                            alt={post.title || post.items[0].kind}
+                            loading="lazy"
+                            className="w-full h-auto max-h-[580px] object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.01]"
                           />
-                        </div>
-                      )}
-                      {getSrc(post.items[0]) && (
-                        <span className="absolute bottom-2.5 right-2.5 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
-                          <Maximize2 className="w-3.5 h-3.5" />
-                        </span>
-                      )}
-                    </div>
-                  ) : count === 2 ? (
-                    <div className="grid grid-cols-2 gap-1 bg-white dark:bg-slate-950">
-                      {post.items.map((entry) =>
-                        renderTile(entry, 'aspect-[3/4] sm:aspect-[4/5]')
-                      )}
-                    </div>
-                  ) : count === 3 ? (
-                    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-[360px] sm:h-[460px] bg-white dark:bg-slate-950">
-                      {renderTile(post.items[0], 'row-span-2 h-full')}
-                      {renderTile(post.items[1], 'h-full')}
-                      {renderTile(post.items[2], 'h-full')}
-                    </div>
-                  ) : count === 4 ? (
-                    <div className="grid grid-cols-2 grid-rows-3 gap-1 h-[390px] sm:h-[490px] bg-white dark:bg-slate-950">
-                      {renderTile(post.items[0], 'row-span-3 h-full')}
-                      {renderTile(post.items[1], 'h-full')}
-                      {renderTile(post.items[2], 'h-full')}
-                      {renderTile(post.items[3], 'h-full')}
-                    </div>
-                  ) : (
-                    <div className="space-y-1 bg-white dark:bg-slate-950">
-                      <div className="grid grid-cols-2 gap-1 h-[195px] sm:h-[240px]">
-                        {renderTile(post.items[0], 'h-full')}
-                        {renderTile(post.items[1], 'h-full')}
+                        ) : (
+                          <div className="flex items-center justify-center w-full h-56 text-slate-400">
+                            <Loader2
+                              className={`w-5 h-5 ${loadingMediaIds[post.items[0].id] ? 'animate-spin' : ''}`}
+                            />
+                          </div>
+                        )}
+                        {getSrc(post.items[0]) && (
+                          <span className="absolute bottom-2.5 right-2.5 p-1.5 rounded-lg bg-slate-950/65 text-white opacity-90 group-hover:opacity-100">
+                            <Maximize2 className="w-3.5 h-3.5" />
+                          </span>
+                        )}
                       </div>
-                      <div className="grid grid-cols-3 gap-1 h-[135px] sm:h-[175px]">
+                    ) : count === 2 ? (
+                      <div className="grid grid-cols-2 gap-1 bg-white dark:bg-slate-950">
+                        {post.items.map((entry) =>
+                          renderTile(entry, 'aspect-[3/4] sm:aspect-[4/5]')
+                        )}
+                      </div>
+                    ) : count === 3 ? (
+                      <div className="grid grid-cols-2 grid-rows-2 gap-1 h-[360px] sm:h-[460px] bg-white dark:bg-slate-950">
+                        {renderTile(post.items[0], 'row-span-2 h-full')}
+                        {renderTile(post.items[1], 'h-full')}
+                        {renderTile(post.items[2], 'h-full')}
+                      </div>
+                    ) : count === 4 ? (
+                      <div className="grid grid-cols-2 grid-rows-3 gap-1 h-[390px] sm:h-[490px] bg-white dark:bg-slate-950">
+                        {renderTile(post.items[0], 'row-span-3 h-full')}
+                        {renderTile(post.items[1], 'h-full')}
                         {renderTile(post.items[2], 'h-full')}
                         {renderTile(post.items[3], 'h-full')}
-                        {renderTile(post.items[4], 'h-full', count > 5 ? count - 5 : 0)}
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="space-y-1 bg-white dark:bg-slate-950">
+                        <div className="grid grid-cols-2 gap-1 h-[195px] sm:h-[240px]">
+                          {renderTile(post.items[0], 'h-full')}
+                          {renderTile(post.items[1], 'h-full')}
+                        </div>
+                        <div className="grid grid-cols-3 gap-1 h-[135px] sm:h-[175px]">
+                          {renderTile(post.items[2], 'h-full')}
+                          {renderTile(post.items[3], 'h-full')}
+                          {renderTile(post.items[4], 'h-full', count > 5 ? count - 5 : 0)}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {isConfirming && (
                     <div className="m-3 flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs">
@@ -2243,6 +2392,103 @@ export function SecurityBackupView({
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
               >
                 {savingApkEdit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{t.mediaApkSaveEditBtn}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Edit Photo Post Modal (Title above Caption) */}
+      {editingPhotoPost && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-xs"
+          onClick={() => {
+            if (!savingPhotoEdit) setEditingPhotoPost(null);
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <form
+            onSubmit={handleSavePhotoPostEdit}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5 space-y-4 shadow-2xl"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>{t.mediaPhotoEditTitle}</span>
+              </h3>
+              <button
+                type="button"
+                disabled={savingPhotoEdit}
+                onClick={() => setEditingPhotoPost(null)}
+                aria-label={t.close}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {t.mediaUploadTitleLabel}
+              </label>
+              <input
+                type="text"
+                value={editingPhotoPost.title}
+                disabled={savingPhotoEdit}
+                onChange={(e) =>
+                  setEditingPhotoPost((prev) =>
+                    prev ? { ...prev, title: e.target.value } : prev
+                  )
+                }
+                placeholder={t.mediaUploadTitlePlaceholder}
+                autoFocus
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                {t.mediaUploadCaptionLabel}
+              </label>
+              <textarea
+                rows={3}
+                value={editingPhotoPost.caption}
+                disabled={savingPhotoEdit}
+                onChange={(e) =>
+                  setEditingPhotoPost((prev) =>
+                    prev ? { ...prev, caption: e.target.value } : prev
+                  )
+                }
+                placeholder={t.mediaUploadCaptionPlaceholder}
+                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 resize-none"
+              />
+            </div>
+
+            {editPhotoError && (
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{editPhotoError}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                disabled={savingPhotoEdit}
+                onClick={() => setEditingPhotoPost(null)}
+                className="px-3.5 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="submit"
+                disabled={savingPhotoEdit}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-xs font-semibold transition-colors"
+              >
+                {savingPhotoEdit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>{t.mediaApkSaveEditBtn}</span>
               </button>
             </div>

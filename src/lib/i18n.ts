@@ -323,6 +323,7 @@ export interface Translations {
   mediaAddMorePhotosBtn: string;
   mediaPostBtn: string;
   mediaSelectedPhotosLabel: string;
+  mediaPhotoEditTitle: string;
 }
 
 const bn: Translations = {
@@ -640,6 +641,7 @@ const bn: Translations = {
   mediaAddMorePhotosBtn: 'আরও ছবি যোগ',
   mediaPostBtn: 'পোস্ট করুন',
   mediaSelectedPhotosLabel: 'টি ছবি নির্বাচিত',
+  mediaPhotoEditTitle: 'পোস্ট এডিট করুন',
 };
 
 const en: Translations = {
@@ -957,6 +959,7 @@ const en: Translations = {
   mediaAddMorePhotosBtn: 'Add More',
   mediaPostBtn: 'Post',
   mediaSelectedPhotosLabel: 'photos selected',
+  mediaPhotoEditTitle: 'Edit Photo Post',
 };
 
 export function getTranslations(lang: Language): Translations {

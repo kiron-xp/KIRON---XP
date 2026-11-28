@@ -445,3 +445,99 @@ export function fileToBase64DataUrl(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+async function decodeImageSource(
+  file: File
+): Promise<{ source: ImageBitmap | HTMLImageElement; width: number; height: number; cleanup: () => void }> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(file);
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        cleanup: () => bitmap.close(),
+      };
+    } catch {
+      // Fall back to HTMLImageElement + object URL
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('Invalid image format'));
+      el.src = objectUrl;
+    });
+    return {
+      source: img,
+      width: img.naturalWidth || img.width,
+      height: img.naturalHeight || img.height,
+      cleanup: () => URL.revokeObjectURL(objectUrl),
+    };
+  } catch (err) {
+    URL.revokeObjectURL(objectUrl);
+    throw err;
+  }
+}
+
+export async function optimize4kImageForVault(
+  file: File,
+  maxDimension = 4096,
+  inlineTargetChars = 680000
+): Promise<string> {
+  // Small images (<= ~500 KB) already fit in a single instant write with 100% untouched bytes
+  if (file.size <= 500000) {
+    const raw = await fileToBase64DataUrl(file);
+    if (raw.length <= inlineTargetChars) {
+      return raw;
+    }
+  }
+
+  const decoded = await decodeImageSource(file);
+  try {
+    const scale = Math.min(maxDimension / decoded.width, maxDimension / decoded.height, 1);
+    const width = Math.max(1, Math.round(decoded.width * scale));
+    const height = Math.max(1, Math.round(decoded.height * scale));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return await fileToBase64DataUrl(file);
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(decoded.source, 0, 0, width, height);
+
+    const encodeAtQuality = (quality: number): string => {
+      const webp = canvas.toDataURL('image/webp', quality);
+      if (webp.startsWith('data:image/webp')) return webp;
+      return canvas.toDataURL('image/jpeg', quality);
+    };
+
+    // Preserve true 4K/HD pixel dimensions across quality steps so both display and download stay 4K
+    const qualities = [0.92, 0.87, 0.82];
+    let bestEncoded = '';
+    for (const q of qualities) {
+      bestEncoded = encodeAtQuality(q);
+      if (bestEncoded.length <= inlineTargetChars) {
+        return bestEncoded;
+      }
+    }
+
+    // Return high-quality 4K WebP (~0.88 quality) or original if original is even smaller
+    const hq4k = encodeAtQuality(0.88);
+    if (file.size <= 1600000) {
+      const raw = await fileToBase64DataUrl(file);
+      return raw.length < hq4k.length ? raw : hq4k;
+    }
+    return hq4k;
+  } finally {
+    decoded.cleanup();
+  }
+}
+

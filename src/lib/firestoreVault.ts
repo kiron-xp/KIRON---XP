@@ -489,12 +489,13 @@ export async function saveProfileMediaDoc(
     }
 
     const parentPayload = cleanProfileMediaPayload({ ...entry, id: docId }, '', totalChunks);
-    await setDoc(doc(db, PROFILE_MEDIA_PATH, docId), parentPayload);
-    onProgress?.(10);
+    const parentWrite = setDoc(doc(db, PROFILE_MEDIA_PATH, docId), parentPayload);
+    onProgress?.(12);
 
-    for (let start = 0; start < totalChunks; start += 12) {
-      const batchEnd = Math.min(totalChunks, start + 12);
-      const writes: Promise<void>[] = [];
+    const CHUNK_BATCH = 24;
+    for (let start = 0; start < totalChunks; start += CHUNK_BATCH) {
+      const batchEnd = Math.min(totalChunks, start + CHUNK_BATCH);
+      const writes: Promise<void>[] = start === 0 ? [parentWrite] : [];
       for (let i = start; i < batchEnd; i += 1) {
         const slice = rawData.slice(i * CHUNK_CHAR_SIZE, (i + 1) * CHUNK_CHAR_SIZE);
         const chunkId = `chunk-${i}`;
@@ -508,7 +509,7 @@ export async function saveProfileMediaDoc(
         );
       }
       await Promise.all(writes);
-      onProgress?.(Math.min(100, Math.round(10 + (batchEnd / totalChunks) * 90)));
+      onProgress?.(Math.min(100, Math.round(12 + (batchEnd / totalChunks) * 88)));
     }
 
     return { ...entry, id: docId, chunkCount: totalChunks, dataUrl: undefined };
