@@ -354,7 +354,7 @@ export function VaultView({
                       </div>
 
                       {acc.caption && (
-                        <p className="text-sm sm:text-base font-medium text-slate-900 dark:text-white break-words pt-0.5">
+                        <p className="text-xs sm:text-sm font-medium text-slate-900 dark:text-white break-words pt-0.5">
                           {acc.caption}
                         </p>
                       )}
