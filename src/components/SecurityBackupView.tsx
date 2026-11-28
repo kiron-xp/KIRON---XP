@@ -136,6 +136,7 @@ export function SecurityBackupView({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState('');
   const [downloadingIds, setDownloadingIds] = useState<Record<string, boolean>>({});
+  const [revealedApkIds, setRevealedApkIds] = useState<Record<string, boolean>>({});
 
   const [copiedMediaId, setCopiedMediaId] = useState<string | null>(null);
   const [openApkMenuId, setOpenApkMenuId] = useState<string | null>(null);
@@ -480,23 +481,19 @@ export function SecurityBackupView({
             : customTitle.slice(0, 160)
           : fallbackTitle.slice(0, 160);
 
-        const cleanApkBase = (
-          customTitle ||
-          cleanRawName ||
-          selectedCategory ||
-          'app'
-        )
-          .replace(/[^a-zA-Z0-9._ -]+/g, '')
-          .trim()
-          .replace(/\s+/g, '_');
-
+        const cleanApkNameRaw = file.name.trim();
         const resolvedFileName =
           kind === 'apk'
-            ? stripBaseApkName(file.name)
-              ? file.name.toLowerCase().endsWith('.apk')
-                ? file.name.slice(0, 200)
-                : `${file.name.slice(0, 195)}.apk`
-              : `${(cleanApkBase || 'app').slice(0, 195)}.apk`
+            ? cleanApkNameRaw
+              ? cleanApkNameRaw.toLowerCase().endsWith('.apk')
+                ? cleanApkNameRaw.slice(0, 200)
+                : `${cleanApkNameRaw.slice(0, 195)}.apk`
+              : `${(
+                  (customTitle || cleanRawName || selectedCategory || 'app')
+                    .replace(/[^a-zA-Z0-9._ -]+/g, '')
+                    .trim()
+                    .replace(/\s+/g, '_') || 'app'
+                ).slice(0, 195)}.apk`
             : file.name.slice(0, 200);
 
         const resolvedMimeType =
@@ -637,10 +634,11 @@ export function SecurityBackupView({
       if (!href) return;
       const a = document.createElement('a');
       a.href = href;
-      const cleanStoredFile = stripBaseApkName(item.fileName);
+      const storedFile =
+        item.kind === 'apk' ? item.fileName?.trim() : stripBaseApkName(item.fileName);
       const cleanTitle = stripBaseApkName(item.title);
       const baseName =
-        cleanStoredFile ||
+        storedFile ||
         cleanTitle ||
         (item.category ? item.category.replace(/\s+/g, '_') : '') ||
         `${item.kind}-${item.id}`;
@@ -712,15 +710,16 @@ export function SecurityBackupView({
     try {
       if (replacementFile) {
         const rawDataUrl = await fileToBase64DataUrl(replacementFile);
+        const cleanReplacementRaw = replacementFile.name.trim();
         const cleanRawName = stripBaseApkName(replacementFile.name).replace(/\.[^.]+$/, '');
         const cleanBase = (cleanTitle || cleanRawName || selectedCategory || 'app')
           .replace(/[^a-zA-Z0-9._ -]+/g, '')
           .trim()
           .replace(/\s+/g, '_');
-        const resolvedFileName = stripBaseApkName(replacementFile.name)
-          ? replacementFile.name.toLowerCase().endsWith('.apk')
-            ? replacementFile.name.slice(0, 200)
-            : `${replacementFile.name.slice(0, 195)}.apk`
+        const resolvedFileName = cleanReplacementRaw
+          ? cleanReplacementRaw.toLowerCase().endsWith('.apk')
+            ? cleanReplacementRaw.slice(0, 200)
+            : `${cleanReplacementRaw.slice(0, 195)}.apk`
           : `${(cleanBase || 'app').slice(0, 195)}.apk`;
 
         const updatedEntry: ProfileMediaEntry = {
@@ -1292,11 +1291,15 @@ export function SecurityBackupView({
             {visibleApkItems.map((item) => {
               const isConfirming = confirmDeleteId === item.id;
               const isDownloading = Boolean(downloadingIds[item.id]);
+              const isApkNameRevealed = Boolean(revealedApkIds[item.id]);
               const cleanTitle = stripBaseApkName(item.title);
               const cleanFile = stripBaseApkName(item.fileName).replace(/\.apk$/i, '').trim();
               const apkDisplayName =
                 cleanTitle || cleanFile || item.category || 'Android App';
               const apkCategoryLine = item.category ? `${item.category} - APK` : 'APK';
+              const originalApkFileName =
+                item.fileName?.trim() ||
+                `${(cleanFile || cleanTitle || item.category || 'base').replace(/\s+/g, '_')}.apk`;
 
               return (
                 <div
@@ -1405,20 +1408,18 @@ export function SecurityBackupView({
                       </div>
                     </div>
 
-                    {/* Right Side: Bordered SADIYA + Download panel matching EmailVaultView */}
+                    {/* Right Side: Tapping SADIYA reveals original filename; tapping fileSize downloads */}
                     <div className="self-center flex flex-col items-center gap-2 p-2 rounded-xl border border-emerald-200 dark:border-emerald-800/80 bg-slate-50/80 dark:bg-slate-950/60 shrink-0 min-w-[116px] max-w-[175px]">
                       <button
                         type="button"
-                        disabled={isDownloading}
-                        onClick={() => handleDownloadMedia(item)}
-                        title={t.mediaDownloadBtn}
-                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200/90 dark:border-emerald-800/70 bg-white dark:bg-slate-900 text-xs sm:text-sm font-bold tracking-wider text-emerald-700 dark:text-emerald-400 transition-colors hover:border-emerald-400 dark:hover:border-emerald-600 disabled:opacity-60 cursor-pointer"
+                        onClick={() =>
+                          setRevealedApkIds((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
+                        }
+                        title={originalApkFileName}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-200/90 dark:border-emerald-800/70 bg-white dark:bg-slate-900 text-xs sm:text-sm font-bold tracking-wider text-emerald-700 dark:text-emerald-400 transition-colors hover:border-emerald-400 dark:hover:border-emerald-600 cursor-pointer"
                       >
-                        {isDownloading && (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
-                        )}
                         <span className="truncate font-mono">
-                          {isDownloading ? t.mediaDownloadingApk : 'SADIYA'}
+                          {isApkNameRevealed ? originalApkFileName : 'SADIYA'}
                         </span>
                       </button>
 
@@ -1435,7 +1436,11 @@ export function SecurityBackupView({
                           <Download className="w-3.5 h-3.5 shrink-0" />
                         )}
                         <span>
-                          {item.fileSize ? formatFileSize(item.fileSize) : t.mediaDownloadBtn}
+                          {isDownloading
+                            ? t.mediaDownloadingApk
+                            : item.fileSize
+                            ? formatFileSize(item.fileSize)
+                            : t.mediaDownloadBtn}
                         </span>
                       </button>
                     </div>

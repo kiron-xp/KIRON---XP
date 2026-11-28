@@ -41,6 +41,7 @@ export function EmailVaultView({
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [emailInput, setEmailInput] = useState('');
+  const [titleInput, setTitleInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [captionInput, setCaptionInput] = useState('');
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | undefined>(undefined);
@@ -92,6 +93,7 @@ export function EmailVaultView({
 
   const resetForm = () => {
     setEmailInput('');
+    setTitleInput('');
     setPasswordInput('');
     setCaptionInput('');
     setAvatarDataUrl(undefined);
@@ -104,6 +106,7 @@ export function EmailVaultView({
   const openAddComposer = () => {
     setEditingId(null);
     setEmailInput('');
+    setTitleInput('');
     setPasswordInput('');
     setCaptionInput('');
     setAvatarDataUrl(undefined);
@@ -115,8 +118,9 @@ export function EmailVaultView({
   const openEditComposer = (entry: EmailEntry) => {
     setEditingId(entry.id);
     setEmailInput(entry.email);
+    setTitleInput(entry.label ?? '');
     setPasswordInput(entry.password ?? '');
-    setCaptionInput(entry.note ?? entry.label ?? '');
+    setCaptionInput(entry.note ?? '');
     setAvatarDataUrl(entry.avatarDataUrl);
     setShowFormPassword(false);
     setFormError('');
@@ -144,12 +148,13 @@ export function EmailVaultView({
       return;
     }
 
+    const cleanTitle = titleInput.trim() || undefined;
     const cleanCaption = captionInput.trim() || undefined;
     const payload = {
       email: cleanEmail,
       password: passwordInput.trim() || undefined,
       note: cleanCaption,
-      label: undefined,
+      label: cleanTitle,
       avatarDataUrl,
     };
 
@@ -243,6 +248,21 @@ export function EmailVaultView({
 
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {t.emailLabelField}
+              </label>
+              <input
+                type="text"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                placeholder={t.emailLabelPlaceholder}
+                className="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                 {t.emailPasswordField}
               </label>
               <div className="relative">
@@ -262,19 +282,19 @@ export function EmailVaultView({
                 </button>
               </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              {t.emailNoteField}
-            </label>
-            <input
-              type="text"
-              value={captionInput}
-              onChange={(e) => setCaptionInput(e.target.value)}
-              placeholder={t.emailNotePlaceholder}
-              className="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-            />
+            <div>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {t.emailNoteField}
+              </label>
+              <input
+                type="text"
+                value={captionInput}
+                onChange={(e) => setCaptionInput(e.target.value)}
+                placeholder={t.emailNotePlaceholder}
+                className="w-full px-3 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
+              />
+            </div>
           </div>
 
           <div>
@@ -357,7 +377,8 @@ export function EmailVaultView({
         <div className="space-y-3">
           {filteredEmails.map((entry) => {
             const isRevealed = Boolean(revealedIds[entry.id]);
-            const caption = entry.note ?? entry.label;
+            const titleText = entry.label?.trim();
+            const caption = entry.note?.trim();
             const emailCopyKey = `email-copy-${entry.id}`;
             const isEmailCopied = copiedKey === emailCopyKey;
             const copyKey = `right-copy-${entry.id}`;
@@ -464,6 +485,12 @@ export function EmailVaultView({
                           )}
                         </div>
                       </div>
+
+                      {titleText && (
+                        <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 truncate">
+                          {titleText}
+                        </p>
+                      )}
 
                       <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 break-all">
                         {entry.email}
